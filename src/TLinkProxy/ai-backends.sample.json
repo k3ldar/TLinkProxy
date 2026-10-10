@@ -1,0 +1,87 @@
+{
+  "models": "C:\\tools\\llama-cpp\\models",
+  "llamacpp": "C:\\tools\\llama-cpp\\llama-server.exe",
+  "backends": [
+    {
+      "alias": "mfdoom",
+      "kind": "llamacpp",
+      "endpoint": "http://127.0.0.1:8081",
+      "model": "MFDoom-deepseek-coder-v2-tool-calling-16b",
+      "tags": ["code-review", "tool-calling", "analysis", "long-context"],
+      "compute": "gpu",
+      "latencyProfile": "fast",
+      "costPer1kInput": 0.0,
+      "costPer1kOutput": 0.0,
+      "maxContext": 16384,
+      "concurrencyLimit": 2,
+      "weight": 100,
+      "allowQueue": true,
+      "maxQueueDepth": 16,
+      "details": {
+        "host": "127.0.0.1",
+        "port": 8081,
+        "gpuLayers": 99,
+        "threads": 8,
+        "batchSize": 512,
+        "contextSize": 16384,
+        "autoRestart": true,
+        "healthCheckSeconds": 30,
+        "timeoutSeconds": 240
+      }
+    },
+    {
+      "alias": "qwen-remote",
+      "kind": "ollama",
+      "endpoint": "http://192.168.50.100:11434",
+      "model": "qwen3.5:9b",
+      "tags": ["ticket-review", "analysis", "long-context"],
+      "compute": "cpu",
+      "latencyProfile": "slow",
+      "costPer1kInput": 0.0,
+      "costPer1kOutput": 0.0,
+      "maxContext": 8192,
+      "concurrencyLimit": 1,
+      "weight": 80
+    },
+    {
+      "alias": "llama-local",
+      "kind": "llamacpp",
+      "endpoint": "http://127.0.0.1:8082",
+      "model": "llama3.2-3b",
+      "tags": ["general-chat", "fast-response"],
+      "compute": "gpu",
+      "latencyProfile": "fast",
+      "costPer1kInput": 0.0,
+      "costPer1kOutput": 0.0,
+      "maxContext": 8192,
+      "concurrencyLimit": 4,
+      "weight": 60,
+      "details": {
+        "host": "127.0.0.1",
+        "port": 8082,
+        "gpuLayers": 999,
+        "threads": 8,
+        "batchSize": 512,
+        "contextSize": 8192,
+        "autoRestart": true,
+        "healthCheckSeconds": 30
+      }
+    },
+    {
+      "alias": "deepseek",
+      "kind": "openai",
+      "endpoint": "https://api.deepseek.com",
+      "apiKeyEnvVar": "DEEPSEEK_API_KEY",
+      "model": "deepseek-v4-pro",
+      "tags": [ "analysis", "tool-calling", "long-context", "heavy" ],
+      "compute": "cloud",
+      "latencyProfile": "medium",
+      "costPer1kInput": 0.27,
+      "costPer1kOutput": 1.10,
+      "maxContext": 64000,
+      "concurrencyLimit": 2,
+      "weight": 90
+    }
+  ],
+  "globalQueueCapacity": 256
+}

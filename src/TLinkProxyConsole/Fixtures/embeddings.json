@@ -1,0 +1,13 @@
+{
+  "description": "v1/embeddings returns an embedding vector",
+  "method": "POST",
+  "path": "v1/embeddings",
+  "strictMatch": false,
+  "request": {
+    "model": "qwen3",
+    "input": "hello world"
+  },
+  "expectedResponse": {
+    "object": "list"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "description": "v1/models returns an OpenAI-style model listing",
+  "method": "GET",
+  "path": "v1/models",
+  "nonEmptyArray": false,
+  "strictMatch": false,
+  "expectedResponse": {
+    "object": "list"
+  }
+}

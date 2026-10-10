@@ -1,0 +1,36 @@
+<Solution>
+  <Folder Name="/Docs/">
+    <File Path="Docs/Architecture.md" />
+    <File Path="Docs/Configuration.md" />
+    <File Path="Docs/FutureProxyMaint.md" />
+    <File Path="Docs/ModelSelection.md" />
+    <File Path="Docs/Proxy.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Regression/">
+    <File Path="src/RegressionTests/all.bat" />
+    <File Path="src/RegressionTests/chat-completions.bat" />
+    <File Path="src/RegressionTests/completions.bat" />
+    <File Path="src/RegressionTests/embeddings.bat" />
+    <File Path="src/RegressionTests/models.bat" />
+    <File Path="src/RegressionTests/show.bat" />
+    <File Path="src/RegressionTests/tags.bat" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="src/.editorconfig" />
+    <File Path="src/.github/copilot-instructions.md" />
+    <File Path="src/Directory.Build.props" />
+  </Folder>
+  <Project Path="src/TLinkProxy.Abstractions/TLinkProxy.Abstractions.csproj" Id="81f820f9-a5f0-4df2-a41c-b9c7b4d63bfe" />
+  <Project Path="src/TLinkProxy.Base/TLinkProxy.Base.csproj" Id="50329e26-3d65-481b-986b-842ba66214dd" />
+  <Project Path="src/TLinkProxy.Clients/TLinkProxy.Clients.csproj" Id="4da9ff00-1d2d-4b1f-9c50-ff87b40f2dd3" />
+  <Project Path="src/TLinkProxy.Configuration/TLinkProxy.Configuration.csproj" />
+  <Project Path="src/TLinkProxy.Db/TLinkProxy.Db.csproj" Id="4c0d4491-7afc-447f-aaaf-9fb3282200d1" />
+  <Project Path="src/TLinkProxy.Kernel/TLinkProxy.Kernel.csproj" Id="3d0552e9-f43a-4c6f-b841-dac4e33cc18d" />
+  <Project Path="src/TLinkProxy.Processes/TLinkProxy.Processes.csproj" Id="0c310f32-9d6c-4ce7-9f48-750e9da582b0" />
+  <Project Path="src/TLinkProxy.Proxy/TLinkProxy.Proxy.csproj" Id="72ef093b-0813-4ec9-969a-86f8924c6161" />
+  <Project Path="src/TLinkProxy.Services/TLinkProxy.Services.csproj" Id="90587e4e-b142-4896-a228-852e3d74464f" />
+  <Project Path="src/TLinkProxy.Tests/TLinkProxy.Tests.csproj" />
+  <Project Path="src/TLinkProxy/TLinkProxy.csproj" />
+  <Project Path="src/TLinkProxyConsole/TLinkProxyConsole.csproj" Id="37757323-811a-4c0d-9045-ca1ffce7ed0a" />
+</Solution>

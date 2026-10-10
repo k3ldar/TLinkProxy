@@ -1,0 +1,11 @@
+{
+  "description": "v1/completions produces a conversational reply",
+  "method": "POST",
+  "path": "v1/completions",
+  "conversation": true,
+  "request": {
+    "model": "qwen3",
+    "prompt": "Complete this sentence: The capital of France is",
+    "stream": false
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "description": "v1/chat/completions produces a conversational reply",
+  "method": "POST",
+  "path": "v1/chat/completions",
+  "conversation": true,
+  "request": {
+    "model": "qwen3",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are an AI designed to provide a quick response in order to test a proxy, be succinct with your responses."
+      },
+      {
+        "role": "user",
+        "content": "Say hello in one short sentence."
+      }
+    ],
+    "stream": false
+  }
+}

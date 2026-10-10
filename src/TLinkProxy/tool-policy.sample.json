@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "name": "write_file",
+      "action": "sanitize",
+      "sensitiveKeys": ["content", "apiKey", "password", "token"],
+      "message": ""
+    },
+    {
+      "name": "delete_file",
+      "action": "block",
+      "message": "File deletion is not allowed by policy."
+    },
+    {
+      "name": "read_file",
+      "action": "allow"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+@using TLinkProxy.Base
+@using TLinkProxy.Configuration.Models
+@model VisualStudioSettingsViewModel
+@{
+ViewData["Title"] = "Visual Studio Settings";
+}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1 class="mb-0">Visual Studio Settings</h1>
+<a class="btn btn-outline-secondary" asp-action="Index">Back</a>
+</div>
+@if (TempData[Constants.VisualStudioSavedKey] != null)
+{
+<div class="alert alert-success" role="alert">Settings saved.</div>
+}
+<form asp-action="VisualStudio" method="post" class="needs-validation" novalidate>
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="card mb-4">
+<div class="card-header">Prompt Trimming</div>
+<div class="card-body">
+<div class="form-check form-switch mb-2">
+<input asp-for="Enabled" type="checkbox" class="form-check-input" />
+<label asp-for="Enabled" class="form-check-label"></label>
+</div>
+<p class="text-muted small mb-3">When disabled, prompts from Visual Studio are passed through unchanged.</p>
+<div class="row g-3">
+<div class="col-12">
+<label asp-for="RemoveBlocks" class="form-label"></label>
+<textarea asp-for="RemoveBlocks" class="form-control font-monospace" rows="5" placeholder="version_information"></textarea>
+<div class="form-text">Tag names whose entire &lt;tag&gt;&hellip;&lt;/tag&gt; region is removed. One per line.</div>
+</div>
+<div class="col-12">
+<label asp-for="RemoveTextPatterns" class="form-label"></label>
+<textarea asp-for="RemoveTextPatterns" class="form-control font-monospace" rows="5" placeholder="Version number:"></textarea>
+<div class="form-text">Literal substrings removed wherever they appear. One per line.</div>
+</div>
+<div class="col-12">
+<label asp-for="RemoveRegexPatterns" class="form-label"></label>
+<textarea asp-for="RemoveRegexPatterns" class="form-control font-monospace" rows="5"></textarea>
+<div class="form-text">Regex patterns removed wherever they match. One per line.</div>
+</div>
+</div>
+<div class="d-flex flex-wrap gap-4 mt-3">
+<div class="form-check form-switch">
+<input asp-for="TrimLineEnds" type="checkbox" class="form-check-input" />
+<label asp-for="TrimLineEnds" class="form-check-label"></label>
+</div>
+<div class="form-check form-switch">
+<input asp-for="CollapseBlankLines" type="checkbox" class="form-check-input" />
+<label asp-for="CollapseBlankLines" class="form-check-label"></label>
+</div>
+</div>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-header">Copilot Instructions</div>
+<div class="card-body">
+<label asp-for="CopilotInstructions" class="form-label"></label>
+<textarea asp-for="CopilotInstructions" class="form-control font-monospace" rows="8"></textarea>
+<div class="form-text">Additional developer instructions added when not already present in the prompt. One per line.</div>
+</div>
+</div>
+<div class="d-flex gap-2">
+<button type="submit" class="btn btn-primary">Save</button>
+<a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+</div>
+</form>

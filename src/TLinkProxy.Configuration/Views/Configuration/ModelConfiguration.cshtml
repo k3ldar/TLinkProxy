@@ -1,0 +1,49 @@
+@using TLinkProxy.Abstractions
+@using TLinkProxy.Base.Configuration
+@model IReadOnlyList<IAiModelConfig>
+@{
+    ViewData["Title"] = "Model Configuration";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Model Configuration</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Index">Back</a>
+        <a class="btn btn-primary" asp-action="Edit">New Model</a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Alias</th>
+                <th>Kind</th>
+                <th>Model</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model == null || Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted">No models configured</td>
+                </tr>
+            }
+            else
+            {
+                foreach (IAiModelConfig backend in Model)
+                {
+                    <tr>
+                        <td><strong>@backend.Alias</strong></td>
+                        <td>@backend.Kind</td>
+                        <td>@backend.Model</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-alias="@backend.Alias">Edit</a>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

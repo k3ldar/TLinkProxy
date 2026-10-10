@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>disable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CleanCodeAnalyzer" Version="1.1.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="MemoryCache.Plugin" Version="5.10.0" />
+		<PackageReference Include="PluginManager" Version="5.11.0" />
+		<PackageReference Include="SharedPluginFeatures" Version="5.11.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Events\" />
+	  <Folder Include="State\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\TLinkProxy.Abstractions\TLinkProxy.Abstractions.csproj" />
+	</ItemGroup>
+
+</Project>

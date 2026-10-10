@@ -1,0 +1,42 @@
+﻿[*.cs]
+
+# CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+dotnet_diagnostic.CS8632.severity = error
+
+
+#dotnet_diagnostic.IDE0008.severity = error
+
+dotnet_diagnostic.IDE0017.severity = error
+dotnet_diagnostic.IDE0028.severity = error
+dotnet_diagnostic.IDE0130.severity = error
+dotnet_diagnostic.IDE0330.severity = error
+dotnet_diagnostic.IDE0044.severity = error
+dotnet_diagnostic.IDE0057.severity = error
+dotnet_diagnostic.IDE0059.severity = error
+dotnet_diagnostic.IDE0090.severity = error
+dotnet_diagnostic.IDE0290.severity = none
+dotnet_diagnostic.IDE0300.severity = error
+dotnet_diagnostic.IDE0301.severity = error
+dotnet_diagnostic.IDE0305.severity = error
+
+
+dotnet_diagnostic.CA1510.severity = error
+dotnet_diagnostic.CA1822.severity = error
+dotnet_diagnostic.CA1845.severity = error
+dotnet_diagnostic.CA2016.severity = error
+
+
+dotnet_diagnostic.MSTEST0037.severity = error
+
+dotnet_diagnostic.CC0003.severity = none
+dotnet_diagnostic.CC0004.severity = error
+dotnet_diagnostic.CC0005.severity = error
+dotnet_diagnostic.CC0008.severity = error
+dotnet_diagnostic.CC0009.severity = warning
+
+
+dotnet_diagnostic.JSON001.severity = error
+
+
+# CA1859: Use concrete types when possible for improved performance
+dotnet_diagnostic.CA1859.severity = none

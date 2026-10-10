@@ -1,0 +1,12 @@
+{
+  "description": "v1/show returns model metadata",
+  "method": "POST",
+  "path": "v1/show",
+  "strictMatch": false,
+  "request": {
+    "model": "qwen3"
+  },
+  "expectedResponse": {
+    "model": "qwen3"
+  }
+}

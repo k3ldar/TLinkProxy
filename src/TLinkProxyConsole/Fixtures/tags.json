@@ -1,0 +1,6 @@
+{
+  "description": "v1/tags returns a non-empty list of models",
+  "method": "GET",
+  "path": "v1/tags",
+  "nonEmptyArray": true
+}

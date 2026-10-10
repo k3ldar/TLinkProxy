@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TLinkProxyConsole": {
+      "commandName": "Project",
+      "commandLineArgs": "-r:\"chat-completions.json\""
+    }
+  }
+}

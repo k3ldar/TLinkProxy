@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TLinkProxy.Abstractions\TLinkProxy.Abstractions.csproj" />
+    <ProjectReference Include="..\TLinkProxy.Base\TLinkProxy.Base.csproj" />
+  </ItemGroup>
+
+</Project>

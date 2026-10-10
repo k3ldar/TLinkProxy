@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharedPluginFeatures" Version="5.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TLinkProxy.Abstractions\TLinkProxy.Abstractions.csproj" />
+    <ProjectReference Include="..\TLinkProxy.Base\TLinkProxy.Base.csproj" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>TLinkProxy.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+	
+</Project>

@@ -1,0 +1,186 @@
+@using TLinkProxy.Base
+@using TLinkProxy.Base.Configuration
+@using TLinkProxy.Configuration.Models
+@using TLinkProxy.Models
+@using TLinkProxy.Abstractions
+@model AiModelEditViewModel
+@{
+ViewData["Title"] = String.IsNullOrWhiteSpace(Model.OriginalAlias) ? "New Model" : "Edit Model";
+}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1 class="mb-0">@ViewData["Title"]</h1>
+<a class="btn btn-outline-secondary" asp-action="ModelConfiguration">Back to list</a>
+</div>
+<form asp-action="Edit" asp-route-alias="" method="post" class="needs-validation" novalidate>
+<input type="hidden" asp-for="OriginalAlias" />
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="card mb-4">
+<div class="card-header">Backend</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-md-4">
+<label asp-for="Backend.Alias" class="form-label"></label>
+<input asp-for="Backend.Alias" class="form-control" />
+<span asp-validation-for="Backend.Alias" class="text-danger"></span>
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.Kind" class="form-label"></label>
+<select asp-for="Backend.Kind" class="form-select">
+<option value="">Select kind&hellip;</option>
+<option value="@ModelKind.Ollama">ollama</option>
+<option value="@ModelKind.LlamaCpp">llamacpp</option>
+<option value="@ModelKind.OpenAI">openai</option>
+</select>
+<span asp-validation-for="Backend.Kind" class="text-danger"></span>
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.Endpoint" class="form-label"></label>
+<input asp-for="Backend.Endpoint" class="form-control" />
+</div>
+<div class="col-md-6">
+<label asp-for="Backend.Model" class="form-label"></label>
+<input asp-for="Backend.Model" class="form-control" id="modelInput" />
+</div>
+<div class="col-md-6">
+<label class="form-label">Installed model (.gguf)</label>
+<select class="form-select" id="installedModelSelect">
+<option value="">Select an installed model&hellip;</option>
+@foreach (string installedModel in Model.InstalledModels)
+{
+<option value="@installedModel">@installedModel</option>
+}
+</select>
+</div>
+<div class="col-md-12">
+<label asp-for="TagsCsv" class="form-label">Tags (comma-separated)</label>
+<input asp-for="TagsCsv" class="form-control" />
+</div>
+</div>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-header">Routing &amp; Cost</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-md-4">
+<label asp-for="Backend.Compute" class="form-label"></label>
+<input asp-for="Backend.Compute" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.LatencyProfile" class="form-label"></label>
+<input asp-for="Backend.LatencyProfile" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.Weight" class="form-label"></label>
+<input asp-for="Backend.Weight" type="number" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.CostPer1mInput" class="form-label"></label>
+<input asp-for="Backend.CostPer1mInput" type="number" step="any" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.CostPer1mOutput" class="form-label"></label>
+<input asp-for="Backend.CostPer1mOutput" type="number" step="any" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.MaxContext" class="form-label"></label>
+<input asp-for="Backend.MaxContext" type="number" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.ApiKeyEnvVar" class="form-label"></label>
+<input asp-for="Backend.ApiKeyEnvVar" class="form-control" />
+</div>
+</div>
+</div>
+</div>
+<div class="card mb-4">
+<div class="card-header">Queue &amp; Health</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-md-4">
+<label asp-for="Backend.ConcurrencyLimit" class="form-label"></label>
+<input asp-for="Backend.ConcurrencyLimit" type="number" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.MaxQueueDepth" class="form-label"></label>
+<input asp-for="Backend.MaxQueueDepth" type="number" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.HealthProbeSeconds" class="form-label"></label>
+<input asp-for="Backend.HealthProbeSeconds" type="number" class="form-control" />
+</div>
+<div class="col-md-12">
+<div class="form-check form-switch">
+<input asp-for="Backend.AllowQueue" type="checkbox" class="form-check-input" />
+<label asp-for="Backend.AllowQueue" class="form-check-label"></label>
+</div>
+<div class="form-check form-switch">
+<input asp-for="Backend.Enabled" type="checkbox" class="form-check-input" />
+<label asp-for="Backend.Enabled" class="form-check-label"></label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="card mb-4" id="llamaDetailsCard">
+<div class="card-header">llama.cpp Details</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-md-2">
+<label asp-for="Backend.Details.GpuLayers" class="form-label"></label>
+<input asp-for="Backend.Details.GpuLayers" type="number" class="form-control" />
+</div>
+<div class="col-md-2">
+<label asp-for="Backend.Details.Threads" class="form-label"></label>
+<input asp-for="Backend.Details.Threads" type="number" class="form-control" />
+</div>
+<div class="col-md-2">
+<label asp-for="Backend.Details.BatchSize" class="form-label"></label>
+<input asp-for="Backend.Details.BatchSize" type="number" class="form-control" />
+</div>
+<div class="col-md-4">
+<label asp-for="Backend.Details.TimeoutSeconds" class="form-label"></label>
+<input asp-for="Backend.Details.TimeoutSeconds" type="number" class="form-control" />
+</div>
+<div class="col-md-12">
+<div class="form-check form-switch">
+<input asp-for="Backend.Details.AutoRestart" type="checkbox" class="form-check-input" />
+<label asp-for="Backend.Details.AutoRestart" class="form-check-label"></label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="d-flex gap-2">
+<button type="submit" class="btn btn-primary">Save</button>
+<a class="btn btn-outline-secondary" asp-action="ModelConfiguration">Cancel</a>
+</div>
+</form>
+@section Scripts {
+<script>
+(function () {
+const select = document.getElementById('installedModelSelect');
+const modelInput = document.getElementById('modelInput');
+select.addEventListener('change', function () {
+if (select.value) {
+modelInput.value = select.value;
+}
+});
+})();
+(function () {
+const kindSelect = document.getElementById('Backend_Kind');
+const llamaCard = document.getElementById('llamaDetailsCard');
+function updateVisibility() {
+// The value will be "LlamaCpp" when that option is selected
+if (kindSelect.value === "LlamaCpp") {
+llamaCard.style.display = "";
+} else {
+llamaCard.style.display = "none";
+}
+}
+// Run on page load
+updateVisibility();
+// Run whenever the user changes the dropdown
+kindSelect.addEventListener('change', updateVisibility);
+})();
+</script>}
