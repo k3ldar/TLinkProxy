@@ -133,7 +133,7 @@ namespace TLinkProxy.Services.ContextOptimizers
             if (model == null)
                 return;
 
-            if (model.MaxCompletionTokens <= 0 || model.MaxCompletionTokens > MaxAllowedCompletionTokens)
+            if (model.MaxCompletionTokens is null or <= 0 or > MaxAllowedCompletionTokens)
             {
                 model.MaxCompletionTokens = DefaultMaxCompletionTokens;
                 changes.Add(Constants.MaxCompletionTokensNormalized);

@@ -67,7 +67,7 @@ namespace TLinkProxy.Db.Internal
 
         private Dictionary<string, int> BuildToolCounts()
         {
-            Dictionary<string, int> counts = new(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> counts = [with(StringComparer.OrdinalIgnoreCase)];
 
             foreach (SessionMetricDataRow session in _metricsData.Select())
             {

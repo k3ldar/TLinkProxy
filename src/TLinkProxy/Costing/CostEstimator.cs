@@ -38,7 +38,7 @@ namespace TLinkProxy.Costing
         {
             if (request?.MaxCompletionTokens > 0)
             {
-                return request.MaxCompletionTokens;
+                return request.MaxCompletionTokens.Value;
             }
 
             return Constants.DefaultOutputTokenEstimate; // conservative default

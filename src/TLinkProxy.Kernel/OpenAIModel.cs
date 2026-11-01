@@ -15,7 +15,7 @@ namespace TLinkProxy.Kernel
         public string Name { get; set; }
 
         [JsonPropertyName("max_completion_tokens")]
-        public int MaxCompletionTokens { get; set; }
+        public int? MaxCompletionTokens { get; set; }
 
         [JsonPropertyName("stream")]
         public bool Stream { get; set; }
