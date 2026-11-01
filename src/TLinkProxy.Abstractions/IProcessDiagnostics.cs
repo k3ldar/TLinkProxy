@@ -13,5 +13,8 @@ namespace TLinkProxy.Abstractions
 
         /// <summary>Currently effective sampling interval.</summary>
         TimeSpan Interval { get; }
+
+        /// <summary>Most recent samples, oldest first, limited to the configured history size.</summary>
+        IReadOnlyList<ProcessDiagnosticsSnapshot> History { get; }
     }
 }

@@ -24,8 +24,13 @@
             <label asp-for="IntervalSeconds" class="form-label"></label>
             <input asp-for="IntervalSeconds" type="number" min="1" max="3600" class="form-control w-auto" />
             <span asp-validation-for="IntervalSeconds" class="text-danger"></span>
-            <div class="form-text">How often memory and thread statistics shown on the dashboard are sampled. Default is @Constants.DefaultDiagnosticsIntervalSeconds seconds. Changes take effect after the current interval elapses.</div>
-        </div>
+            Changes take effect after the current interval elapses.</div>
+
+                        <label asp-for="HistorySamples" class="form-label mt-3"></label>
+                        <input asp-for="HistorySamples" type="number" min="@Constants.MinDiagnosticsHistorySamples" max="@Constants.MaxDiagnosticsHistorySamples" class="form-control w-auto" />
+                        <span asp-validation-for="HistorySamples" class="text-danger"></span>
+                        <div class="form-text">Number of recent samples kept in memory for the dashboard memory graph. Default is @Constants.DefaultDiagnosticsHistorySamples. History is cleared when the application restarts.</div>
+                    </div>
     </div>
 
     <div class="d-flex gap-2">

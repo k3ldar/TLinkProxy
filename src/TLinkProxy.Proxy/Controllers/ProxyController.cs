@@ -11,6 +11,7 @@ using TLinkProxy.Base;
 using TLinkProxy.Base.Models;
 using TLinkProxy.Clients;
 using TLinkProxy.Kernel;
+using TLinkProxy.Proxy.Streaming;
 
 using static TLinkProxy.Base.Constants;
 
@@ -31,7 +32,10 @@ namespace TLinkProxy.Proxy.Controllers
         private const string HopHeaderTransferEncoding = "Transfer-Encoding";
         private const string HopHeaderUpgrade = "Upgrade";
         private const string HopHeaderHost = "Host";
-        private readonly HttpClient _httpClient;
+        private const int SseLogSnippetBytes = 1000;
+
+        // Shared for the lifetime of the process: a new client per request leaks sockets and handler state.
+        private static readonly HttpClient SharedHttpClient = CreateSharedHttpClient();
         private readonly string _remoteBase;
         private readonly IProxySessionLogger _sessionLogger;
         private readonly IContextOptimizerFactory _contextOptimizerFactory;
@@ -70,13 +74,21 @@ namespace TLinkProxy.Proxy.Controllers
             _openAiRequestParser = openAiRequestParser ?? throw new ArgumentNullException(nameof(openAiRequestParser));
             _backendModelSelector = backendModelSelector ?? throw new ArgumentNullException(nameof(backendModelSelector));
             _tokenStatsStore = tokenStatsStore ?? throw new ArgumentNullException(nameof(tokenStatsStore));
+        }
 
-            HttpClientHandler handler = new()
+        private static HttpClient CreateSharedHttpClient()
+        {
+            SocketsHttpHandler handler = new()
             {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                // Recycle pooled connections periodically so DNS changes are honoured.
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+                {
+                    RemoteCertificateValidationCallback = (_, _, _, _) => true
+                }
             };
 
-            _httpClient = new HttpClient(handler)
+            return new HttpClient(handler)
             {
                 Timeout = TimeSpan.FromMinutes(10)
             };
@@ -233,7 +245,7 @@ namespace TLinkProxy.Proxy.Controllers
                 {
                 }
 
-                HttpResponseMessage forwardedResponse = await _httpClient.SendAsync(context.ForwardRequest, HttpCompletionOption.ResponseHeadersRead, HttpContext.RequestAborted);
+                HttpResponseMessage forwardedResponse = await SharedHttpClient.SendAsync(context.ForwardRequest, HttpCompletionOption.ResponseHeadersRead, HttpContext.RequestAborted);
 
                 using (forwardedResponse)
                 {
@@ -272,38 +284,7 @@ namespace TLinkProxy.Proxy.Controllers
                         Response.Headers.Remove("transfer-encoding");
 
                         using Stream responseStream = await forwardedResponse.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
-                        byte[] buffer = new byte[8192];
-
-                        using MemoryStream buffered = new();
-
-                        while (true)
-                        {
-                            int read = await responseStream.ReadAsync(buffer.AsMemory(0, buffer.Length), HttpContext.RequestAborted);
-
-                            if (read == 0)
-                                break;
-
-                            // Log a short snippet of the chunk
-                            try
-                            {
-                                string text = Encoding.UTF8.GetString(buffer, 0, read);
-                                string snippet = text.Length > 1000 ? String.Concat(text.AsSpan(0, 1000), "...(truncated)") : text;
-                                await _sessionLogger.LogAsync(context.OptimizationResult.SessionId, $"[Proxy][SSE] Chunk: {snippet}");
-                            }
-                            catch
-                            {
-                                await _sessionLogger.LogAsync(context.OptimizationResult.SessionId, $"[Proxy][SSE] Chunk: {read} bytes (non-text)");
-                            }
-
-                            await buffered.WriteAsync(buffer.AsMemory(0, read), HttpContext.RequestAborted);
-                        }
-
-                        string sseText = Encoding.UTF8.GetString(buffered.ToArray());
-                        string inspectedSse = await _toolCallInspector.InspectResponseAsync(sseText, context.OptimizationResult.SessionId, context.RequestModel?.Model, true, HttpContext.RequestAborted);
-
-                        byte[] outBytes = Encoding.UTF8.GetBytes(inspectedSse ?? sseText);
-                        await Response.Body.WriteAsync(outBytes, 0, outBytes.Length, HttpContext.RequestAborted);
-                        await Response.Body.FlushAsync(HttpContext.RequestAborted);
+                        await RelaySseAsync(responseStream, context);
 
                         Console.WriteLine("[Proxy] SSE stream finished.");
                         return;
@@ -473,16 +454,18 @@ namespace TLinkProxy.Proxy.Controllers
                     optimizationsMade.AddRange(optimizer.Optimize(model, sessionId));
                 }
 
-                optResult.Body = JsonSerializer.Serialize(model, Constants.JsonRequestOptions);
+                string optimizedBody = JsonSerializer.Serialize(model, Constants.JsonRequestOptions);
+
+                optResult.Body = optimizedBody;
                 optResult.Optimizations.AddRange(optimizationsMade);
 
-                result.RequestBodyText = JsonSerializer.Serialize(model, Constants.JsonRequestOptions);
+                result.RequestBodyText = optimizedBody;
                 result.RequestModel = model;
 
                 // Record api call and token stats centrally so all optimizers benefit without individual wiring
                 await _sessionLogger.LogAsync(sessionId, String.Format(Constants.OptimizerBytesSavedFormat,
-                    requestBodyText.Length - result.RequestBodyText.Length, requestBodyText.Length, result.RequestBodyText.Length));
-                await _tokenStatsStore.RecordAsync(sessionId, requestBodyText.Length, result.RequestBodyText.Length,
+                    requestBodyText.Length - optimizedBody.Length, requestBodyText.Length, optimizedBody.Length));
+                await _tokenStatsStore.RecordAsync(sessionId, requestBodyText.Length, optimizedBody.Length,
                     model.Model ?? Constants.DefaultValueUnknown);
             }
 
@@ -748,37 +731,7 @@ namespace TLinkProxy.Proxy.Controllers
                             Response.Headers.Remove("transfer-encoding");
 
                             using Stream responseStream = await resp.Content.ReadAsStreamAsync(HttpContext.RequestAborted);
-                            byte[] buffer = new byte[8192];
-
-                            using MemoryStream buffered = new();
-
-                            while (true)
-                            {
-                                int read = await responseStream.ReadAsync(buffer.AsMemory(0, buffer.Length), HttpContext.RequestAborted);
-
-                                if (read == 0)
-                                    break;
-
-                                try
-                                {
-                                    string text = Encoding.UTF8.GetString(buffer, 0, read);
-                                    string snippet = text.Length > 1000 ? String.Concat(text.AsSpan(0, 1000), "...(truncated)") : text;
-                                    await _sessionLogger.LogAsync(proxyContext.OptimizationResult.SessionId, $"[Proxy][SSE] Chunk: {snippet}");
-                                }
-                                catch
-                                {
-                                    await _sessionLogger.LogAsync(proxyContext.OptimizationResult.SessionId, $"[Proxy][SSE] Chunk: {read} bytes (non-text)");
-                                }
-
-                                await buffered.WriteAsync(buffer.AsMemory(0, read), HttpContext.RequestAborted);
-                            }
-
-                            string sseText = Encoding.UTF8.GetString(buffered.ToArray());
-                            string inspectedSse = await _toolCallInspector.InspectResponseAsync(sseText, proxyContext.OptimizationResult.SessionId, proxyContext.RequestModel?.Model, true, HttpContext.RequestAborted);
-
-                            byte[] outBytes = Encoding.UTF8.GetBytes(inspectedSse ?? sseText);
-                            await Response.Body.WriteAsync(outBytes, 0, outBytes.Length, HttpContext.RequestAborted);
-                            await Response.Body.FlushAsync(HttpContext.RequestAborted);
+                            await RelaySseAsync(responseStream, proxyContext);
                         }
                         else
                         {
@@ -810,12 +763,44 @@ namespace TLinkProxy.Proxy.Controllers
 
                 return true;
             }
+            catch (Exception ex) when (Response.HasStarted)
+            {
+                // Part of the response is already with the client, so falling back to the remote base would corrupt it.
+                await _sessionLogger.LogAsync(proxyContext.OptimizationResult.SessionId, $"[Proxy] Response aborted after it started: {ex.Message}");
+                return true;
+            }
             catch
             {
                 // ignore and fall back to default remote base
             }
 
             return false;
+        }
+
+        private async Task RelaySseAsync(Stream responseStream, ProxyContext context)
+        {
+            string sessionId = context.OptimizationResult.SessionId;
+
+            // The length is unknown (and may change if the tool-call policy rewrites the stream).
+            Response.Headers.ContentLength = null;
+
+            await SseStreamRelay.RelayAsync(
+                responseStream,
+                Response.Body,
+                text => _toolCallInspector.InspectResponseAsync(text, sessionId, context.RequestModel?.Model, true, HttpContext.RequestAborted),
+                chunk => LogSseChunkAsync(sessionId, chunk),
+                HttpContext.RequestAborted);
+        }
+
+        private Task LogSseChunkAsync(string sessionId, ReadOnlyMemory<byte> chunk)
+        {
+            ReadOnlySpan<byte> span = chunk.Span;
+            bool truncated = span.Length > SseLogSnippetBytes;
+            string snippet = Encoding.UTF8.GetString(truncated ? span[..SseLogSnippetBytes] : span);
+
+            return _sessionLogger.LogAsync(sessionId, truncated
+                ? $"[Proxy][SSE] Chunk: {snippet}...(truncated)"
+                : $"[Proxy][SSE] Chunk: {snippet}");
         }
 
         private async Task<bool> InterceptShowAsync(ProxyContext proxyContext)

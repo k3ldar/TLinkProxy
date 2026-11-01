@@ -54,6 +54,13 @@
         <div class="row g-3" id="hostDiagnostics">
             <div class="col-12 text-center text-muted">Loading&hellip;</div>
         </div>
+        <hr />
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Memory history</h6>
+            <span id="memoryHistoryInfo" class="text-muted small"></span>
+        </div>
+        <div id="memoryLegend" class="d-flex flex-wrap gap-3 small mb-2"></div>
+        <div id="memoryChart" class="text-muted small">Collecting samples&hellip;</div>
     </div>
 </div>
 
@@ -97,6 +104,18 @@
             const toolUsage = document.getElementById('toolUsage');
             const hostDiagnostics = document.getElementById('hostDiagnostics');
             const diagnosticsInterval = document.getElementById('diagnosticsInterval');
+            const memoryChart = document.getElementById('memoryChart');
+            const memoryLegend = document.getElementById('memoryLegend');
+            const memoryHistoryInfo = document.getElementById('memoryHistoryInfo');
+            let lastHistorySample = null;
+            let historyRequestInFlight = false;
+
+            const memorySeries = [
+                { key: 'managedHeapBytes', label: 'Managed heap', color: '#0d6efd' },
+                { key: 'gcCommittedBytes', label: 'GC committed', color: '#6f42c1' },
+                { key: 'workingSetBytes', label: 'Working set', color: '#198754' },
+                { key: 'privateMemoryBytes', label: 'Private memory', color: '#fd7e14' }
+            ];
 
             function formatNumber(value) {
                 if (value == null || isNaN(value)) {
@@ -203,6 +222,7 @@
 
                         renderOptimizerStats(data.optimizer);
                         renderDiagnostics(data.diagnostics);
+                        refreshMemoryHistory(data.diagnostics);
 
                         if (data.generatedAtUtc) {
                             lastUpdated.textContent = 'Updated ' + new Date(data.generatedAtUtc).toLocaleTimeString();
@@ -320,6 +340,93 @@
                 }
 
                 hostDiagnostics.innerHTML = html;
+            }
+
+            function refreshMemoryHistory(d) {
+                if (!d || !d.sampledAtUtc || d.sampledAtUtc === lastHistorySample || historyRequestInFlight) {
+                    return;
+                }
+
+                historyRequestInFlight = true;
+
+                fetch('/home/diagnostics/history', { cache: 'no-store' })
+                    .then(response => response.json())
+                    .then(history => {
+                        lastHistorySample = d.sampledAtUtc;
+                        renderMemoryChart(history);
+                    })
+                    .catch(() => { })
+                    .finally(() => { historyRequestInFlight = false; });
+            }
+
+            function niceMax(value) {
+                const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+
+                for (const step of [1, 2, 5, 10]) {
+                    if (value <= step * magnitude) {
+                        return step * magnitude;
+                    }
+                }
+
+                return 10 * magnitude;
+            }
+
+            function renderMemoryChart(history) {
+                const samples = (history && history.samples) || [];
+
+                memoryLegend.innerHTML = memorySeries.map(s =>
+                    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;background:' + s.color + '"></span>' + escapeHtml(s.label) + '</span>').join('');
+
+                if (samples.length < 2) {
+                    memoryChart.textContent = 'Collecting samples\u2026';
+                    memoryHistoryInfo.textContent = '';
+                    return;
+                }
+
+                memoryHistoryInfo.textContent = samples.length + ' samples, every ' + history.intervalSeconds + 's';
+
+                const width = 900, height = 240;
+                const margin = { left: 70, right: 12, top: 10, bottom: 24 };
+                const plotWidth = width - margin.left - margin.right;
+                const plotHeight = height - margin.top - margin.bottom;
+
+                let max = 0;
+                samples.forEach(sample => memorySeries.forEach(s => { max = Math.max(max, sample[s.key] || 0); }));
+                max = niceMax(Math.max(max, 1));
+
+                const x = i => margin.left + (i / (samples.length - 1)) * plotWidth;
+                const y = v => margin.top + plotHeight - ((v || 0) / max) * plotHeight;
+
+                let svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" style="max-height:260px" role="img" aria-label="Memory history">';
+
+                for (let tick = 0; tick <= 4; tick++) {
+                    const value = (max / 4) * tick;
+                    const ty = y(value);
+                    svg += '<line x1="' + margin.left + '" x2="' + (width - margin.right) + '" y1="' + ty + '" y2="' + ty + '" stroke="#dee2e6" stroke-width="1" />' +
+                        '<text x="' + (margin.left - 6) + '" y="' + (ty + 4) + '" text-anchor="end" font-size="11" fill="#6c757d">' + escapeHtml(formatBytes(value)) + '</text>';
+                }
+
+                const first = new Date(samples[0].sampledAtUtc).toLocaleTimeString();
+                const last = new Date(samples[samples.length - 1].sampledAtUtc).toLocaleTimeString();
+                svg += '<text x="' + margin.left + '" y="' + (height - 6) + '" font-size="11" fill="#6c757d">' + escapeHtml(first) + '</text>' +
+                    '<text x="' + (width - margin.right) + '" y="' + (height - 6) + '" text-anchor="end" font-size="11" fill="#6c757d">' + escapeHtml(last) + '</text>';
+
+                memorySeries.forEach(s => {
+                    const points = samples.map((sample, i) => x(i).toFixed(1) + ',' + y(sample[s.key]).toFixed(1)).join(' ');
+                    svg += '<polyline fill="none" stroke="' + s.color + '" stroke-width="2" points="' + points + '" />';
+                });
+
+                // Transparent hit targets give a native tooltip listing every series for each sample.
+                const slot = plotWidth / (samples.length - 1);
+
+                samples.forEach((sample, i) => {
+                    const tip = new Date(sample.sampledAtUtc).toLocaleTimeString() + '\n' +
+                        memorySeries.map(s => s.label + ': ' + formatBytes(sample[s.key])).join('\n');
+                    svg += '<rect x="' + (x(i) - slot / 2).toFixed(1) + '" y="' + margin.top + '" width="' + slot.toFixed(1) + '" height="' + plotHeight + '" fill="transparent"><title>' + escapeHtml(tip) + '</title></rect>';
+                });
+
+                svg += '</svg>';
+                memoryChart.innerHTML = svg;
             }
 
             function updateCountdowns() {

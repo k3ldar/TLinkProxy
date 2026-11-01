@@ -119,7 +119,7 @@ namespace TLinkProxy.Configuration.Controllers
         [HttpGet("Diagnostics")]
         public IActionResult Diagnostics()
         {
-            return View(new DiagnosticsSettingsViewModel { IntervalSeconds = LoadDiagnosticsInterval() });
+            return View(new DiagnosticsSettingsViewModel { IntervalSeconds = LoadDiagnosticsInterval(), HistorySamples = LoadDiagnosticsHistorySamples() });
         }
 
         [HttpPost("Diagnostics")]
@@ -134,6 +134,7 @@ namespace TLinkProxy.Configuration.Controllers
             }
 
             _settingsService.UpdateSetting(Constants.DiagnosticsIntervalSecondsKey, viewModel.IntervalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            _settingsService.UpdateSetting(Constants.DiagnosticsHistorySamplesKey, viewModel.HistorySamples.ToString(System.Globalization.CultureInfo.InvariantCulture));
             TempData[Constants.DiagnosticsSavedKey] = true;
 
             return RedirectToAction(nameof(Diagnostics), ControllerName);
@@ -146,6 +147,15 @@ namespace TLinkProxy.Configuration.Controllers
             return Int32.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int seconds) && seconds > 0
                 ? seconds
                 : Constants.DefaultDiagnosticsIntervalSeconds;
+        }
+
+        private int LoadDiagnosticsHistorySamples()
+        {
+            string value = _settingsService.GetSetting(Constants.DiagnosticsHistorySamplesKey);
+
+            return Int32.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int samples)
+                ? Math.Clamp(samples, Constants.MinDiagnosticsHistorySamples, Constants.MaxDiagnosticsHistorySamples)
+                : Constants.DefaultDiagnosticsHistorySamples;
         }
 
         private VisualStudioSettings LoadVisualStudioSettings()

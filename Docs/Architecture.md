@@ -46,9 +46,9 @@ Registrations (singletons unless noted):
    - **Optimise** with all `IContextOptimizer`s from `IContextOptimizerFactory`; bytes saved are logged and `ITokenStatsStore.RecordAsync` stores before/after sizes.
    - **Schedule** (`ValidateScheduler`): global slot (none → `429`), then per-backend slot (none → `504`, global slot released). Slots are held in `ProxyContext` until the request ends.
 2. **Intercept** by path:
-   - `/v1/chat/completions` → `InterceptChatCompletions`: `BackendClientFactory.CreateFor(selected)` → `IBackendClient.SendAsync` → copy status/headers → SSE is buffered, inspected and re-emitted; non-streaming bodies are inspected and written.
+   SSE is relayed to the client event by event (`SseStreamRelay`, pooled buffers); once an event carries a non-empty `tool_calls` array the remainder is held, inspected by `IToolCallInspector` and then written (rewritten if policy requires); non-streaming bodies are inspected and written.
    - `/v1/models`, `/v1/show`, `/v1/embeddings` → answered from the backend registry or forwarded to the chosen backend.
-3. **Fallback passthrough**: otherwise forward to the selected backend endpoint / `REMOTE_OLLAMA_URL` with an `HttpClient`, copying non-hop-by-hop headers and `Authorization`; legacy `/v1/completions` prompts are translated to chat format; `/v1/models` responses get default capabilities. With no remote configured it returns `502`.
+with a single process-wide `HttpClient` (`SocketsHttpHandler`, 5-minute connection lifetime, certificate validation disabled as before) shared by all requests, copying
 4. **Response inspection**: `IToolCallInspector.InspectResponseAsync` applies `IToolCallPolicy` to tool calls (allow/block, argument redaction), appends block messages, and records metrics via `ISessionMetricStore`.
 5. **Cleanup**: `ProxyContext.Dispose` releases scheduler slots. Cancellation, timeouts and exceptions map to `502`.
 
@@ -95,7 +95,7 @@ SimpleDB tables for settings, AI models, daily token stats and session metrics, 
 ## Web UI
 
 - `HomeController` (dashboard, `home/status` JSON): backend health, queue/slot state, process activity, token period summaries, tool usage (from incrementally maintained counts in `ISessionMetricStore.GetToolUsageCounts`, not a per-poll scan), optimiser summaries, and host diagnostics. The dashboard polls `home/status` via AJAX.
-- Host diagnostics: `ProcessDiagnosticsMonitor` (`IProcessDiagnostics`, hosted service in `TLinkProxy.Processes`) samples GC heap, working set, private memory, thread pool statistics and per-llama.cpp-process memory off the request path and caches the latest snapshot. The interval defaults to 10s and is read from the `DiagnosticsIntervalSeconds` setting on every pass.
+is read from the `DiagnosticsIntervalSeconds` setting on every pass. A bounded in-memory ring of recent samples (`DiagnosticsHistorySamples`, default 30, 2-720, cleared on restart) backs the dashboard memory graph, served by `GET /home/diagnostics/history`; the page fetches it only when a new sample timestamp appears in `/home/status` and draws an inline SVG chart.
 - `ConfigurationController` (`/Configuration`): model list/edit (llama.cpp details kept only for llama.cpp kinds), Visual Studio optimiser settings, diagnostics sampling interval, installed model discovery.
 
 ## Configuration

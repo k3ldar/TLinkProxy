@@ -35,6 +35,25 @@ namespace TLinkProxy.Controllers
             return Json(await BuildStatus());
         }
 
+        [HttpGet("home/diagnostics/history")]
+        public IActionResult DiagnosticsHistory()
+        {
+            DashboardMemoryHistoryDto dto = new()
+            {
+                IntervalSeconds = (int)Math.Max(1, _processDiagnostics.Interval.TotalSeconds),
+                Samples = [.. _processDiagnostics.History.Select(sample => new DashboardMemorySampleDto
+                {
+                    SampledAtUtc = sample.SampledAtUtc,
+                    ManagedHeapBytes = sample.ManagedHeapBytes,
+                    GcCommittedBytes = sample.GcCommittedBytes,
+                    WorkingSetBytes = sample.WorkingSetBytes,
+                    PrivateMemoryBytes = sample.PrivateMemoryBytes
+                })]
+            };
+
+            return Json(dto);
+        }
+
         private async Task<DashboardStatusModel> BuildStatus()
         {
             DashboardStatusModel result = new()

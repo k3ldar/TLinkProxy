@@ -145,6 +145,10 @@ namespace TLinkProxy.Base
         public const string DiagnosticsSavedKey = "DiagnosticsSaved";
         public const string DiagnosticsIntervalSecondsKey = "DiagnosticsIntervalSeconds";
         public const int DefaultDiagnosticsIntervalSeconds = 10;
+        public const string DiagnosticsHistorySamplesKey = "DiagnosticsHistorySamples";
+        public const int DefaultDiagnosticsHistorySamples = 30;
+        public const int MinDiagnosticsHistorySamples = 2;
+        public const int MaxDiagnosticsHistorySamples = 720;
         public const string JsonContentTypeToken = "json";
         public const string MaxCompletionTokensNormalized = "max_completion_tokens_normalized";
         public const string ToolChoiceCleared = "tool_choice_cleared";

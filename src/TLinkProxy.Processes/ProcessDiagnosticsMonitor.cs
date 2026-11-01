@@ -14,6 +14,7 @@ namespace TLinkProxy.Processes
         private readonly ISettingsService _settingsService;
         private readonly ILlamaCppProcessManager _processManager;
         private readonly Lock _gate = new();
+        private readonly Queue<ProcessDiagnosticsSnapshot> _history = new();
         private ProcessDiagnosticsSnapshot _snapshot;
         private TimeSpan _interval;
         private CancellationTokenSource _cts;
@@ -46,6 +47,17 @@ namespace TLinkProxy.Processes
                 lock (_gate)
                 {
                     return _interval;
+                }
+            }
+        }
+
+        public IReadOnlyList<ProcessDiagnosticsSnapshot> History
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return [.. _history];
                 }
             }
         }
@@ -89,6 +101,7 @@ namespace TLinkProxy.Processes
             while (!ct.IsCancellationRequested)
             {
                 TimeSpan interval = ResolveInterval();
+                int historyCapacity = ResolveHistoryCapacity();
 
                 try
                 {
@@ -99,6 +112,12 @@ namespace TLinkProxy.Processes
                     {
                         _snapshot = snapshot;
                         _interval = interval;
+                        _history.Enqueue(snapshot);
+
+                        while (_history.Count > historyCapacity)
+                        {
+                            _history.Dequeue();
+                        }
                     }
                 }
                 catch
@@ -134,6 +153,25 @@ namespace TLinkProxy.Processes
             }
 
             return TimeSpan.FromSeconds(Constants.DefaultDiagnosticsIntervalSeconds);
+        }
+
+        private int ResolveHistoryCapacity()
+        {
+            try
+            {
+                string raw = _settingsService.GetSetting(Constants.DiagnosticsHistorySamplesKey);
+
+                if (Int32.TryParse(raw, out int samples))
+                {
+                    return Math.Clamp(samples, Constants.MinDiagnosticsHistorySamples, Constants.MaxDiagnosticsHistorySamples);
+                }
+            }
+            catch
+            {
+                // Fall back to the default when settings storage is unavailable.
+            }
+
+            return Constants.DefaultDiagnosticsHistorySamples;
         }
 
         private static ProcessDiagnosticsSnapshot CollectSnapshot(IReadOnlyList<ProcessMemorySample> processes)

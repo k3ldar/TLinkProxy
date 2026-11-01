@@ -59,6 +59,36 @@ public class ConfigurationControllerDiagnosticsTests
     }
 
     [TestMethod]
+    public void Diagnostics_Get_NoStoredHistory_UsesDefaultHistorySamples()
+    {
+        _settings.GetSetting(Constants.DiagnosticsHistorySamplesKey).Returns((string)null);
+
+        ViewResult result = (ViewResult)_sut.Diagnostics();
+
+        Assert.AreEqual(Constants.DefaultDiagnosticsHistorySamples, ((DiagnosticsSettingsViewModel)result.Model).HistorySamples);
+    }
+
+    [TestMethod]
+    public void Diagnostics_Get_StoredHistory_ReturnsStoredValue()
+    {
+        _settings.GetSetting(Constants.DiagnosticsHistorySamplesKey).Returns("60");
+
+        ViewResult result = (ViewResult)_sut.Diagnostics();
+
+        Assert.AreEqual(60, ((DiagnosticsSettingsViewModel)result.Model).HistorySamples);
+    }
+
+    [TestMethod]
+    public void Diagnostics_Post_ValidModel_SavesHistorySamples()
+    {
+        _sut.TempData = Substitute.For<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataDictionary>();
+
+        _sut.Diagnostics(new DiagnosticsSettingsViewModel { IntervalSeconds = 10, HistorySamples = 45 });
+
+        _settings.Received(1).UpdateSetting(Constants.DiagnosticsHistorySamplesKey, "45");
+    }
+
+    [TestMethod]
     public void Diagnostics_Post_ValidModel_SavesSettingAndRedirects()
     {
         _sut.TempData = Substitute.For<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataDictionary>();
