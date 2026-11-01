@@ -6,6 +6,10 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<EnableHotReloadInRuntimeConfigDevFile>false</EnableHotReloadInRuntimeConfigDevFile>
+	</PropertyGroup>
+
 	<ItemGroup>
 	  <Content Remove="Views\Configuration\Edit.cshtml" />
 	  <Content Remove="Views\Configuration\Index.cshtml" />

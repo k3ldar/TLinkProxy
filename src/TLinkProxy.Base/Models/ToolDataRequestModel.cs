@@ -1,4 +1,4 @@
-﻿namespace TLinkProxy.Models
+﻿namespace TLinkProxy.Base.Models
 {
     public sealed class ToolDataRequestModel
     {

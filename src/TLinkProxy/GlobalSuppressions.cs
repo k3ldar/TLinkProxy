@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Style", "CC0005:Block statement should have exactly one blank line below it", Justification = "False positive", Scope = "member", Target = "~M:TLinkProxy.Program.Main(System.String[])")]
+[assembly: SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "<Pending>", Scope = "member", Target = "~M:TLinkProxy.Routing.RuleEngine.OrderByPreference(System.Collections.Generic.List{TLinkProxy.Abstractions.IAiModelConfig},System.String)~System.Collections.Generic.List{TLinkProxy.Abstractions.IAiModelConfig}")]

@@ -1,14 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
+
 using TLinkProxy.Abstractions;
 using TLinkProxy.Base;
 using TLinkProxy.Base.Models;
 using TLinkProxy.Clients;
 using TLinkProxy.Kernel;
+
 using static TLinkProxy.Base.Constants;
 
 #pragma warning disable CC0009, CC0010
@@ -457,7 +460,9 @@ namespace TLinkProxy.Proxy.Controllers
 
             IAiModelConfig selectedBackend = await ConfigureBackendModelAsync(result);
 
-            if (requestModel != null)
+            // A recovered stub model has no messages/prompt; keep the original body so it is
+            // forwarded unchanged rather than re-serialized from an incomplete model.
+            if (requestModel != null && (requestModel.Messages != null || requestModel.Prompt != null))
             {
                 List<IContextOptimizer> optimizers = _contextOptimizerFactory.GetOptimizers(requestBodyText);
                 List<string> optimizationsMade = [];

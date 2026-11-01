@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using TLinkProxy.Kernel.Converters;
+using System.Text.Json.Serialization;
 
 namespace TLinkProxy.Kernel
 {
@@ -8,6 +9,7 @@ namespace TLinkProxy.Kernel
         public string Role { get; set; }
 
         [JsonPropertyName("content")]
+        [JsonConverter(typeof(MessageContentJsonConverter))]
         public string Content { get; set; }
 
         [JsonPropertyName("tool_call_id")]

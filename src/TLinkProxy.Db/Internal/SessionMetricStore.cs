@@ -1,7 +1,8 @@
+using SimpleDB;
+
 using TLinkProxy.Abstractions;
 using TLinkProxy.Base.Models;
 using TLinkProxy.Db.Tables;
-using SimpleDB;
 
 namespace TLinkProxy.Db.Internal
 {
@@ -47,9 +48,9 @@ namespace TLinkProxy.Db.Internal
 
         public List<ISessionMetricRecord> GetAll()
         {
-            List<ISessionMetricRecord> result = new();
+            List<ISessionMetricRecord> result = [];
 
-            List<SessionMetricDataRow> sessions = _metricsData.Select().ToList();
+            List<SessionMetricDataRow> sessions = [.. _metricsData.Select()];
 
             foreach (SessionMetricDataRow session in sessions)
             {

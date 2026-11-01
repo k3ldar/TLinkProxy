@@ -5,7 +5,11 @@
 		<Nullable>disable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
-
+	
+	<PropertyGroup>
+		<EnableHotReloadInRuntimeConfigDevFile>false</EnableHotReloadInRuntimeConfigDevFile>
+	</PropertyGroup>
+	
 	<ItemGroup>
 		<Compile Remove="Views\Configuration\**" />
 		<Content Remove="Views\Configuration\**" />

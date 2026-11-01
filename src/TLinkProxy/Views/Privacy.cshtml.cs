@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace TLinkProxy.Pages
+namespace TLinkProxy.Views
 {
     public class PrivacyModel : PageModel
     {
