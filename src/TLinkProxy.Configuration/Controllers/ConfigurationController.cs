@@ -116,6 +116,38 @@ namespace TLinkProxy.Configuration.Controllers
             return RedirectToAction(nameof(VisualStudio), ControllerName);
         }
 
+        [HttpGet("Diagnostics")]
+        public IActionResult Diagnostics()
+        {
+            return View(new DiagnosticsSettingsViewModel { IntervalSeconds = LoadDiagnosticsInterval() });
+        }
+
+        [HttpPost("Diagnostics")]
+        [ValidateAntiForgeryToken]
+        public IActionResult Diagnostics(DiagnosticsSettingsViewModel viewModel)
+        {
+            ArgumentNullException.ThrowIfNull(viewModel);
+
+            if (!ModelState.IsValid)
+            {
+                return View(viewModel);
+            }
+
+            _settingsService.UpdateSetting(Constants.DiagnosticsIntervalSecondsKey, viewModel.IntervalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            TempData[Constants.DiagnosticsSavedKey] = true;
+
+            return RedirectToAction(nameof(Diagnostics), ControllerName);
+        }
+
+        private int LoadDiagnosticsInterval()
+        {
+            string value = _settingsService.GetSetting(Constants.DiagnosticsIntervalSecondsKey);
+
+            return Int32.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int seconds) && seconds > 0
+                ? seconds
+                : Constants.DefaultDiagnosticsIntervalSeconds;
+        }
+
         private VisualStudioSettings LoadVisualStudioSettings()
         {
             string json = _settingsService.GetSetting(Constants.VisualStudioSettingsKey);

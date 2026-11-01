@@ -1,0 +1,35 @@
+@using TLinkProxy.Base
+@using TLinkProxy.Configuration.Models
+@model DiagnosticsSettingsViewModel
+@{
+    ViewData["Title"] = "Diagnostics Settings";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Diagnostics Settings</h1>
+    <a class="btn btn-outline-secondary" asp-action="Index">Back</a>
+</div>
+
+@if (TempData[Constants.DiagnosticsSavedKey] != null)
+{
+    <div class="alert alert-success" role="alert">Settings saved.</div>
+}
+
+<form asp-action="Diagnostics" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="card mb-4">
+        <div class="card-header">Host Diagnostics</div>
+        <div class="card-body">
+            <label asp-for="IntervalSeconds" class="form-label"></label>
+            <input asp-for="IntervalSeconds" type="number" min="1" max="3600" class="form-control w-auto" />
+            <span asp-validation-for="IntervalSeconds" class="text-danger"></span>
+            <div class="form-text">How often memory and thread statistics shown on the dashboard are sampled. Default is @Constants.DefaultDiagnosticsIntervalSeconds seconds. Changes take effect after the current interval elapses.</div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+    </div>
+</form>

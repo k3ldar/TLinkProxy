@@ -12,6 +12,7 @@
 
 	<ItemGroup>
 	  <Content Remove="Views\Configuration\Edit.cshtml" />
+	  <Content Remove="Views\Configuration\Diagnostics.cshtml" />
 	  <Content Remove="Views\Configuration\Index.cshtml" />
 	  <Content Remove="Views\Configuration\ModelConfiguration.cshtml" />
 	  <Content Remove="Views\Configuration\VisualStudio.cshtml" />
@@ -19,6 +20,7 @@
 
 	<ItemGroup>
 	  <EmbeddedResource Include="Views\Configuration\Edit.cshtml" />
+	  <EmbeddedResource Include="Views\Configuration\Diagnostics.cshtml" />
 	  <EmbeddedResource Include="Views\Configuration\Index.cshtml" />
 	  <EmbeddedResource Include="Views\Configuration\ModelConfiguration.cshtml" />
 	  <EmbeddedResource Include="Views\Configuration\VisualStudio.cshtml" />

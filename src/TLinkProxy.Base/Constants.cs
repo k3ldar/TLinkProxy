@@ -142,6 +142,9 @@ namespace TLinkProxy.Base
         public const string ConfigSettingGlobalQueueCapacity = "GlobalQueueCapacity";
         public const string VisualStudioSettingsKey = "VisualStudioSettings";
         public const string VisualStudioSavedKey = "VisualStudioSaved";
+        public const string DiagnosticsSavedKey = "DiagnosticsSaved";
+        public const string DiagnosticsIntervalSecondsKey = "DiagnosticsIntervalSeconds";
+        public const int DefaultDiagnosticsIntervalSeconds = 10;
         public const string JsonContentTypeToken = "json";
         public const string MaxCompletionTokensNormalized = "max_completion_tokens_normalized";
         public const string ToolChoiceCleared = "tool_choice_cleared";

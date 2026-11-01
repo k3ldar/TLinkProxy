@@ -25,8 +25,10 @@ namespace TLinkProxy.Processes
         {
             services.AddSingleton<ILlamaCppProcessManager, LlamaCppProcessManager>();
             services.AddSingleton<IAiInstanceHealthMonitor, AiInstanceHealthMonitor>();
+            services.AddSingleton<IProcessDiagnostics, ProcessDiagnosticsMonitor>();
             services.AddHostedService(sp => sp.GetRequiredService<ILlamaCppProcessManager>());
             services.AddHostedService(sp => sp.GetRequiredService<IAiInstanceHealthMonitor>());
+            services.AddHostedService(sp => sp.GetRequiredService<IProcessDiagnostics>());
             services.AddSingleton<IAiModelRuntimeStateStore, AiModelRuntimeStateStore>();
         }
 

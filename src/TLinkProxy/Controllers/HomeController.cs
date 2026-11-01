@@ -12,14 +12,16 @@ namespace TLinkProxy.Controllers
         private readonly ILlamaCppProcessManager _processManager;
         private readonly ITokenStatsStore _dailyTokenStore;
         private readonly ISessionMetricStore _sessionMetricStore;
+        private readonly IProcessDiagnostics _processDiagnostics;
 
-        public HomeController(IAiBackendRegistry registry, IModelScheduler scheduler, ILlamaCppProcessManager processManager, ITokenStatsStore dailyTokenStore, ISessionMetricStore sessionMetricStore)
+        public HomeController(IAiBackendRegistry registry, IModelScheduler scheduler, ILlamaCppProcessManager processManager, ITokenStatsStore dailyTokenStore, ISessionMetricStore sessionMetricStore, IProcessDiagnostics processDiagnostics)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             _processManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
             _dailyTokenStore = dailyTokenStore ?? throw new ArgumentNullException(nameof(dailyTokenStore));
             _sessionMetricStore = sessionMetricStore ?? throw new ArgumentNullException(nameof(sessionMetricStore));
+            _processDiagnostics = processDiagnostics ?? throw new ArgumentNullException(nameof(processDiagnostics));
         }
 
         public IActionResult Index()
@@ -37,22 +39,19 @@ namespace TLinkProxy.Controllers
         {
             DashboardStatusModel result = new()
             {
-                GeneratedAtUtc = DateTime.UtcNow
+                GeneratedAtUtc = DateTime.UtcNow,
+                Diagnostics = CreateDiagnosticsDto(_processDiagnostics.Snapshot, _processDiagnostics.Interval)
             };
 
             ITokenDailyRecord todaySummary = _dailyTokenStore.GetToday();
             ITokenDailyRecord monthSummary = _dailyTokenStore.GetThisMonth();
             ITokenDailyRecord lifetimeSummary = _dailyTokenStore.GetLifetime();
-            List<ISessionMetricRecord> sessionMetrics = _sessionMetricStore.GetAll();
 
-            List<ToolUsageSummaryDto> toolsCalled = [.. sessionMetrics
-                .SelectMany(metric => metric.ToolInvocations ?? [])
-                .Where(invocation => !String.IsNullOrWhiteSpace(invocation?.Name))
-                .GroupBy(invocation => invocation.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(group => new ToolUsageSummaryDto
+            List<ToolUsageSummaryDto> toolsCalled = [.. _sessionMetricStore.GetToolUsageCounts()
+                .Select(pair => new ToolUsageSummaryDto
                 {
-                    Name = group.Key,
-                    Count = group.Count()
+                    Name = pair.Key,
+                    Count = pair.Value
                 })
                 .OrderByDescending(item => item.Count)
                 .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)];
@@ -109,6 +108,44 @@ namespace TLinkProxy.Controllers
             }
 
             return result;
+        }
+
+        private static DashboardDiagnosticsDto CreateDiagnosticsDto(ProcessDiagnosticsSnapshot snapshot, TimeSpan interval)
+        {
+            DashboardDiagnosticsDto dto = new()
+            {
+                IntervalSeconds = (int)Math.Max(1, interval.TotalSeconds)
+            };
+
+            if (snapshot == null)
+            {
+                return dto;
+            }
+
+            dto.SampledAtUtc = snapshot.SampledAtUtc;
+            dto.ManagedHeapBytes = snapshot.ManagedHeapBytes;
+            dto.GcCommittedBytes = snapshot.GcCommittedBytes;
+            dto.TotalAllocatedBytes = snapshot.TotalAllocatedBytes;
+            dto.WorkingSetBytes = snapshot.WorkingSetBytes;
+            dto.PrivateMemoryBytes = snapshot.PrivateMemoryBytes;
+            dto.ThreadPoolThreads = snapshot.ThreadPoolThreads;
+            dto.PendingWorkItems = snapshot.ThreadPoolPendingWorkItems;
+            dto.CompletedWorkItems = snapshot.ThreadPoolCompletedItems;
+
+            if (snapshot.Processes != null)
+            {
+                dto.Processes = [.. snapshot.Processes
+                    .Where(process => process != null && !String.IsNullOrWhiteSpace(process.Alias))
+                    .Select(process => new DashboardProcessMemoryDto
+                    {
+                        Alias = process.Alias,
+                        ProcessId = process.ProcessId,
+                        WorkingSetBytes = process.WorkingSetBytes,
+                        PrivateMemoryBytes = process.PrivateMemoryBytes
+                    })];
+            }
+
+            return dto;
         }
 
         private static TokenPeriodSummaryDto CreatePeriodSummary(ITokenDailyRecord record)

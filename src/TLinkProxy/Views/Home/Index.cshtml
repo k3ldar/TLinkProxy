@@ -45,6 +45,18 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Host diagnostics</h5>
+        <span id="diagnosticsInterval" class="text-muted small"></span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3" id="hostDiagnostics">
+            <div class="col-12 text-center text-muted">Loading&hellip;</div>
+        </div>
+    </div>
+</div>
+
 <div class="table-responsive">
     <table class="table table-striped align-middle">
         <thead class="table-light">
@@ -83,6 +95,8 @@
             const tokenPeriodRows = document.getElementById('tokenPeriodRows');
             const totalToolCalls = document.getElementById('totalToolCalls');
             const toolUsage = document.getElementById('toolUsage');
+            const hostDiagnostics = document.getElementById('hostDiagnostics');
+            const diagnosticsInterval = document.getElementById('diagnosticsInterval');
 
             function formatNumber(value) {
                 if (value == null || isNaN(value)) {
@@ -188,6 +202,7 @@
                         updateCountdowns();
 
                         renderOptimizerStats(data.optimizer);
+                        renderDiagnostics(data.diagnostics);
 
                         if (data.generatedAtUtc) {
                             lastUpdated.textContent = 'Updated ' + new Date(data.generatedAtUtc).toLocaleTimeString();
@@ -248,6 +263,63 @@
                 });
 
                 toolUsage.innerHTML = toolHtml;
+            }
+
+            function renderDiagnostics(d) {
+                if (diagnosticsInterval) {
+                    diagnosticsInterval.textContent = d && d.intervalSeconds ? 'Sampled every ' + d.intervalSeconds + 's' : '';
+                }
+
+                if (!d) {
+                    hostDiagnostics.innerHTML = '<div class="col-12 text-center text-muted">No diagnostics available</div>';
+                    return;
+                }
+
+                const stats = [
+                    { label: 'Managed heap', value: formatBytes(d.managedHeapBytes) },
+                    { label: 'GC committed', value: formatBytes(d.gcCommittedBytes) },
+                    { label: 'Allocated (total)', value: formatBytes(d.totalAllocatedBytes) },
+                    { label: 'Working set', value: formatBytes(d.workingSetBytes) },
+                    { label: 'Private memory', value: formatBytes(d.privateMemoryBytes) },
+                    { label: 'Thread pool threads', value: formatNumber(d.threadPoolThreads) },
+                    { label: 'Pending work items', value: formatNumber(d.pendingWorkItems) },
+                    { label: 'Completed work items', value: formatNumber(d.completedWorkItems) }
+                ];
+
+                let html = '';
+
+                stats.forEach(s => {
+                    html += '<div class="col-6 col-md-3">' +
+                        '<div class="border rounded p-2 h-100">' +
+                        '<div class="text-muted small">' + escapeHtml(s.label) + '</div>' +
+                        '<div class="fs-5">' + s.value + '</div>' +
+                        '</div>' +
+                        '</div>';
+                });
+
+                const processes = d.processes || [];
+
+                if (processes.length === 0) {
+                    html += '<div class="col-12 text-muted small">No managed child processes running.</div>';
+                } else {
+                    html += '<div class="col-12"><table class="table table-sm table-striped mb-0">' +
+                        '<thead class="table-light"><tr><th>Process</th><th class="text-end">PID</th>' +
+                        '<th class="text-end">Working set</th><th class="text-end">Private memory</th></tr></thead>' +
+                        '<tbody>';
+
+                    processes.forEach(p => {
+                        html += '<tr>' +
+                            '<td><strong>' + escapeHtml(p.alias) + '</strong></td>' +
+                            '<td class="text-end">' + formatNumber(p.processId) + '</td>' +
+                            '<td class="text-end">' + formatBytes(p.workingSetBytes) + '</td>' +
+                            '<td class="text-end">' + formatBytes(p.privateMemoryBytes) + '</td>' +
+                            '</tr>';
+                    });
+
+                    html += '</tbody></table></div>';
+                }
+
+                hostDiagnostics.innerHTML = html;
             }
 
             function updateCountdowns() {

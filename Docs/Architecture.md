@@ -94,8 +94,9 @@ SimpleDB tables for settings, AI models, daily token stats and session metrics, 
 
 ## Web UI
 
-- `HomeController` (dashboard, `home/status` JSON): backend health, queue/slot state, process activity, token period summaries, tool usage, optimiser summaries.
-- `ConfigurationController` (`/Configuration`): model list/edit (llama.cpp details kept only for llama.cpp kinds), Visual Studio optimiser settings, installed model discovery.
+- `HomeController` (dashboard, `home/status` JSON): backend health, queue/slot state, process activity, token period summaries, tool usage (from incrementally maintained counts in `ISessionMetricStore.GetToolUsageCounts`, not a per-poll scan), optimiser summaries, and host diagnostics. The dashboard polls `home/status` via AJAX.
+- Host diagnostics: `ProcessDiagnosticsMonitor` (`IProcessDiagnostics`, hosted service in `TLinkProxy.Processes`) samples GC heap, working set, private memory, thread pool statistics and per-llama.cpp-process memory off the request path and caches the latest snapshot. The interval defaults to 10s and is read from the `DiagnosticsIntervalSeconds` setting on every pass.
+- `ConfigurationController` (`/Configuration`): model list/edit (llama.cpp details kept only for llama.cpp kinds), Visual Studio optimiser settings, diagnostics sampling interval, installed model discovery.
 
 ## Configuration
 

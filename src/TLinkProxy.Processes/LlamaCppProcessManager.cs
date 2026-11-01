@@ -142,6 +142,46 @@ namespace TLinkProxy.Processes
             }
         }
 
+        public IReadOnlyList<ProcessMemorySample> GetProcessMemory()
+        {
+            List<ProcessMemorySample> result = [];
+
+            lock (_gate)
+            {
+                foreach (KeyValuePair<string, Process> pair in _processes)
+                {
+                    Process proc = pair.Value;
+
+                    if (proc == null)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        if (proc.HasExited)
+                        {
+                            continue;
+                        }
+
+                        result.Add(new ProcessMemorySample
+                        {
+                            Alias = pair.Key,
+                            ProcessId = proc.Id,
+                            WorkingSetBytes = proc.WorkingSet64,
+                            PrivateMemoryBytes = proc.PrivateMemorySize64
+                        });
+                    }
+                    catch
+                    {
+                        // Process may have exited between the HasExited check and the memory read.
+                    }
+                }
+            }
+
+            return result;
+        }
+
         public void Handle(ModelsReloadedEvent @event)
         {
             ArgumentNullException.ThrowIfNull(@event);

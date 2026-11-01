@@ -6,5 +6,8 @@ namespace TLinkProxy.Abstractions
     {
         Task EnsureStartedAsync(IAiModelConfig modelConfig, CancellationToken ct);
         DateTime? GetLastActivityUtc(string alias);
+
+        /// <summary>Returns memory usage for each currently managed child process.</summary>
+        IReadOnlyList<ProcessMemorySample> GetProcessMemory();
     }
 }

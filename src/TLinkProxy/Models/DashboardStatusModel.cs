@@ -10,6 +10,9 @@ namespace TLinkProxy.Models
         [JsonPropertyName("optimizer")]
         public DashboardOptimizerSummaryDto Optimizer { get; set; } = new();
 
+        [JsonPropertyName("diagnostics")]
+        public DashboardDiagnosticsDto Diagnostics { get; set; }
+
         [JsonPropertyName("models")]
         public List<ModelStatusDto> Models { get; set; } = [];
     }
