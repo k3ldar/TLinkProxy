@@ -31,7 +31,6 @@ namespace TLinkProxy
             ThreadManager.ThreadCpuChangeNotification = 0;
             ThreadManager.ThreadHangTimeout = TimeSpan.FromMinutes(ThreadHangTimeout);
 
-            PluginManagerService.UsePlugin(typeof(SimpleDB.PluginInitialisation));
             PluginManagerService.UsePlugin(typeof(Db.PluginInitialisation));
             PluginManagerService.UsePlugin(typeof(Base.PluginInitialisation));
             PluginManagerService.UsePlugin(typeof(Clients.PluginInitialisation));

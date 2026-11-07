@@ -12,17 +12,18 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="MemoryCache.Plugin" Version="5.10.0" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
 		<PackageReference Include="PluginManager" Version="5.11.0" />
 		<PackageReference Include="SharedPluginFeatures" Version="5.11.0" />
 	</ItemGroup>
-        
-	  <ItemGroup>
-    <PackageReference Include="SimpleDB" Version="6.0.0" />
-  </ItemGroup>
-        
-	  <ItemGroup>
-	    <ProjectReference Include="..\TLinkProxy.Abstractions\TLinkProxy.Abstractions.csproj" />
-	    <ProjectReference Include="..\TLinkProxy.Base\TLinkProxy.Base.csproj" />
-	  </ItemGroup>
 
-</Project>
+		  <ItemGroup>
+			  <InternalsVisibleTo Include="TLinkProxy.Tests" />
+		  </ItemGroup>
+
+		  <ItemGroup>
+			  <ProjectReference Include="..\TLinkProxy.Abstractions\TLinkProxy.Abstractions.csproj" />
+			  <ProjectReference Include="..\TLinkProxy.Base\TLinkProxy.Base.csproj" />
+		  </ItemGroup>
+
+	  </Project>

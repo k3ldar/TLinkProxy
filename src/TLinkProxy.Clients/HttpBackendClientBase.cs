@@ -42,6 +42,7 @@ namespace TLinkProxy.Clients
             };
 
             ConfigureRequest(modelConfig, request);
+            Constants.ApplyAdditionalHeaders(request, modelConfig.AdditionalHeaders);
 
             await _logger.LogAsync(sessionId, $"[{ClientLabel}] POST {url}").ConfigureAwait(false);
             HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);

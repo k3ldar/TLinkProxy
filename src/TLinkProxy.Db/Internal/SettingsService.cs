@@ -1,17 +1,18 @@
+#pragma warning disable CC0009, CC0010 // SQL parameter names are clearer inline
+
+using Microsoft.Data.Sqlite;
 using TLinkProxy.Abstractions;
-using TLinkProxy.Db.Tables;
-using SimpleDB;
 
 namespace TLinkProxy.Db.Internal
 {
     internal sealed class SettingsService : ISettingsService
     {
         private const string ErrorSettingNameRequired = "Setting name is required.";
-        private readonly ISimpleDBOperations<SettingsDataRow> _settingsData;
+        private readonly SqliteDatabase _database;
 
-        public SettingsService(ISimpleDBOperations<SettingsDataRow> settingsData)
+        public SettingsService(SqliteDatabase database)
         {
-            _settingsData = settingsData ?? throw new ArgumentNullException(nameof(settingsData));
+            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         public bool DeleteSetting(string name)
@@ -21,15 +22,11 @@ namespace TLinkProxy.Db.Internal
                 return false;
             }
 
-            SettingsDataRow row = FindRow(name);
+            using SqliteConnection connection = _database.CreateConnection();
+            using SqliteCommand command = connection.CreateCommand("DELETE FROM Settings WHERE Name = $name;")
+                .With("$name", name);
 
-            if (row == null)
-            {
-                return false;
-            }
-
-            _settingsData.Delete(row);
-            return true;
+            return command.ExecuteNonQuery() > 0;
         }
 
         public string GetSetting(string name)
@@ -39,8 +36,12 @@ namespace TLinkProxy.Db.Internal
                 return null;
             }
 
-            SettingsDataRow row = FindRow(name);
-            return row?.Value;
+            using SqliteConnection connection = _database.CreateConnection();
+            using SqliteCommand command = connection.CreateCommand("SELECT Value FROM Settings WHERE Name = $name;")
+                .With("$name", name);
+
+            object result = command.ExecuteScalar();
+            return result == null || result is DBNull ? null : Convert.ToString(result);
         }
 
         public string UpdateSetting(string name, string value)
@@ -50,29 +51,20 @@ namespace TLinkProxy.Db.Internal
                 throw new ArgumentException(ErrorSettingNameRequired, nameof(name));
             }
 
-            SettingsDataRow row = FindRow(name);
+            string now = DbTime.Format(DateTime.UtcNow);
 
-            if (row == null)
-            {
-                row = new SettingsDataRow { Name = name, Value = value };
-                _settingsData.Insert(row);
-                return value;
-            }
+            using SqliteConnection connection = _database.CreateConnection();
+            using SqliteCommand command = connection.CreateCommand("""
+                INSERT INTO Settings (Name, Value, Created, Updated)
+                VALUES ($name, $value, $now, $now)
+                ON CONFLICT(Name) DO UPDATE SET Value = excluded.Value, Updated = excluded.Updated;
+                """)
+                .With("$name", name)
+                .With("$value", value)
+                .With("$now", now);
 
-            row.Value = value;
-            _settingsData.Update(row);
+            command.ExecuteNonQuery();
             return value;
-        }
-
-        private SettingsDataRow FindRow(string name)
-        {
-            if (String.IsNullOrWhiteSpace(name))
-            {
-                return null;
-            }
-
-            List<SettingsDataRow> settings = [.. _settingsData.Select(x => String.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))];
-            return settings.FirstOrDefault();
         }
     }
 }

@@ -90,6 +90,14 @@ ViewData["Title"] = String.IsNullOrWhiteSpace(Model.OriginalAlias) ? "New Model"
 <label asp-for="Backend.ApiKeyEnvVar" class="form-label"></label>
 <input asp-for="Backend.ApiKeyEnvVar" class="form-control" />
 </div>
+<div class="col-md-4">
+<label asp-for="Backend.AuthScheme" class="form-label"></label>
+<input asp-for="Backend.AuthScheme" class="form-control" placeholder="Bearer" />
+</div>
+<div class="col-md-12">
+<label asp-for="AdditionalHeadersCsv" class="form-label">Additional headers (one per line, <code>Name: value</code>)</label>
+<textarea asp-for="AdditionalHeadersCsv" class="form-control" rows="3" placeholder="anthropic-version: 2026-10-21"></textarea>
+</div>
 </div>
 </div>
 </div>

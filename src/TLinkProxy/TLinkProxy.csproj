@@ -38,10 +38,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="SimpleDB" Version="6.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<ProjectReference Include="..\TLinkProxy.Abstractions\TLinkProxy.Abstractions.csproj" />
 		<ProjectReference Include="..\TLinkProxy.Clients\TLinkProxy.Clients.csproj" />
 		<ProjectReference Include="..\TLinkProxy.Configuration\TLinkProxy.Configuration.csproj" />

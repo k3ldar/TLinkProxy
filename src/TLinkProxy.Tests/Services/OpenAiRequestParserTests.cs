@@ -1,6 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
+
 using TLinkProxy.Kernel;
 using TLinkProxy.Services;
-using System.Diagnostics.CodeAnalysis;
 
 namespace TLinkProxy.Tests.Services
 {
@@ -47,7 +48,7 @@ namespace TLinkProxy.Tests.Services
             }
             """;
 
-            (OpenAIModel model, RoutingEnvelope routing, string normalizedBody) = await parser.ParseAsync(body, "application/json");
+            (OpenAIModel model, RoutingEnvelope routing, string _) = await parser.ParseAsync(body, "application/json");
 
             Assert.IsNotNull(routing);
             Assert.AreEqual("chat", routing.RequestType);

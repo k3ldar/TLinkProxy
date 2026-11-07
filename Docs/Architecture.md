@@ -14,7 +14,7 @@ TLinkProxy is an OpenAI/Ollama-compatible reverse proxy (.NET 10, ASP.NET Core) 
 | `TLinkProxy.Services` | Backend registry, request parser, session registry/logger, context optimisers, tool-call inspection/policy, event bus, model selector. |
 | `TLinkProxy.Clients` | `BackendClientFactory`, `HttpBackendClientBase`, OpenAI/LlamaCpp/Ollama clients, `BackendResponse`. |
 | `TLinkProxy.Processes` | Hosted services `LlamaCppProcessManager` and `AiInstanceHealthMonitor`. |
-| `TLinkProxy.Db` | SimpleDB (encrypted) persistence: settings, AI models, daily token stats, session/tool metrics. |
+SQLite persistence: settings, AI models, daily token stats, session/tool metrics.
 | `TLinkProxy.Configuration` | Configuration UI (`ConfigurationController`, model and Visual Studio settings views). |
 | `TLinkProxy.Tests` | Unit tests. |
 | `TLinkProxyConsole` | Console regression runner (fixtures, MCP client, response comparer) driven by `RegressionTests`. |
@@ -23,12 +23,12 @@ The host references the plugin projects, which depend on `Abstractions`/`Base`/`
 
 ## Plugin composition and DI
 
-Each project (except Abstractions/Kernel) exposes a `PluginInitialisation` (`IPlugin`). `Program.Main` registers them (`SimpleDB`, `Db`, `Base`, `Clients`, `Proxy`, `Processes`, `Configuration`, `Services`), initialises `PluginManagerService`, and builds the app. Plugin controllers and Razor views are discovered via `ConfigurePluginManager()`.
+registers them (`Db`, `Base`,
 
 Registrations (singletons unless noted):
 
 - **Services**: `IEventBus`, `IProxySessionLogger`, `IContextOptimizerFactory`, `IToolCallPolicy`, `IToolCallInspector`, `ISessionRegistry`, `IAiBackendRegistry`, `IBackendModelSelector`, `IOpenAiRequestParser`.
-- **Db**: table rows (`SettingsDataRow`, `AIModelDataRow`, `TokenDailyDataRow`), `ISettingsService`, `IAiModelStore`, `ITokenStatsStore`, `ISessionMetricStore`. Database in `%ProgramData%\TLinkProxy\Database`, encrypted with `PF_DB_ENCRYPTION_KEY` (generated and saved as a user env var if absent).
+- **Db**: `SqliteDatabase` (connection and schema), `ISettingsService`, `IAiModelStore`, `ITokenStatsStore`, `ISessionMetricStore`. Database file is `%ProgramData%\TLinkProxy\TLinkProxy.db`; the schema is created on startup.
 - **Clients**: `BackendClientFactory`.
 - **Processes**: `ILlamaCppProcessManager`, `IAiInstanceHealthMonitor` (also hosted services), `IAiModelRuntimeStateStore`.
 - **Host**: `RuleEngine`, `BackendScorer`, `ICostEstimator`, `IBackendRouter`, `IModelScheduler`, named `HttpClient` `"backend"`, cookie auth and session.
@@ -69,7 +69,7 @@ with a single process-wide `HttpClient` (`SocketsHttpHandler`, 5-minute connecti
 - `AiBackendRegistry` merges `AiSettings` and persisted models (`IAiModelStore`) into `IAiModelConfig`s, tracks health (`SetHealth`/`IsHealthy`) and runtime state, and publishes `ModelsReloadedEvent` on `IEventBus` when models change.
 - `BackendClientFactory.CreateFor(IAiModelConfig)` switches on `ModelKind` (`OpenAI`, `LlamaCpp`, `Ollama`) and creates a fresh client per call with `ActivatorUtilities.CreateInstance`; unknown kinds fall back to Ollama; null throws `ArgumentNullException`.
 - `HttpBackendClientBase` (template method): uses the named `"backend"` `HttpClient`, POSTs a UTF-8 JSON body to `Endpoint + pathAndQuery`, rewrites `"model"` to the backend model, logs via `IProxySessionLogger`; subclasses supply `ClientLabel` and `ConfigureRequest`.
-  - `OpenAIBackendClient` adds `Authorization: Bearer` from the env var named by `ApiKeyEnvVar`.
+  - `OpenAIBackendClient` adds `Authorization: <AuthScheme>` from the env var named by `ApiKeyEnvVar` (the scheme defaults to `Bearer`). `HttpBackendClientBase` also attaches any per-model `additionalHeaders` to every backend request.
   - `LlamaCppBackendClient` and `OllamaBackendClient` use no auth.
 - `BackendResponse` (`IBackendResponse`) wraps the `HttpResponseMessage` (`StatusCode`, `Headers`, `Content`) and disposes it.
 - `IBackendModelSelector` resolves/applies the actual model name for a selected backend.
@@ -90,7 +90,7 @@ with a single process-wide `HttpClient` (`SocketsHttpHandler`, 5-minute connecti
 
 ## Persistence (`TLinkProxy.Db`)
 
-SimpleDB tables for settings, AI models, daily token stats and session metrics, accessed via `ISettingsService`, `IAiModelStore`, `ITokenStatsStore`, `ISessionMetricStore`. Implementations are `internal`.
+SQLite tables for settings, AI models, daily token stats and session metrics,
 
 ## Web UI
 
@@ -100,7 +100,7 @@ is read from the `DiagnosticsIntervalSeconds` setting on every pass. A bounded i
 
 ## Configuration
 
-Environment variables: `REMOTE_OLLAMA_URL` (passthrough target), `OLLAMAPROXY_URL` (listen URL, default `http://localhost:11434`), `AI_BACKENDS_CONFIG`, `PF_DB_ENCRYPTION_KEY`, plus per-model API key variables. See `Configuration.md` and `ModelSelection.md`.
+`AI_BACKENDS_CONFIG`, plus per-model
 
 ## Design patterns and observations
 

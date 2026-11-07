@@ -35,6 +35,8 @@ namespace TLinkProxy.Tests.Configuration
               "concurrencyLimit": 4,
               "weight": 10,
               "apiKeyEnvVar": "MY_API_KEY",
+              "authScheme": "Basic",
+              "additionalHeaders": { "anthropic-version": "2026-10-21" },
               "allowQueue": true,
               "maxQueueDepth": 12,
               "enabled": true
@@ -57,6 +59,9 @@ namespace TLinkProxy.Tests.Configuration
             Assert.AreEqual(4, sut.ConcurrencyLimit);
             Assert.AreEqual(10, sut.Weight);
             Assert.AreEqual("MY_API_KEY", sut.ApiKeyEnvVar);
+            Assert.AreEqual("Basic", sut.AuthScheme);
+            Assert.IsNotNull(sut.AdditionalHeaders);
+            Assert.AreEqual("2026-10-21", sut.AdditionalHeaders["anthropic-version"]);
             Assert.IsTrue(sut.AllowQueue);
             Assert.AreEqual(12, sut.MaxQueueDepth);
             Assert.IsTrue(sut.Enabled);
@@ -75,6 +80,8 @@ namespace TLinkProxy.Tests.Configuration
             Assert.IsNull(sut.Compute);
             Assert.IsNull(sut.LatencyProfile);
             Assert.IsNull(sut.ApiKeyEnvVar);
+            Assert.AreEqual(Constants.AuthenticationSchemeBearer, sut.AuthScheme);
+            Assert.IsNull(sut.AdditionalHeaders);
             Assert.AreEqual(0.0, sut.CostPer1mInput);
             Assert.AreEqual(0.0, sut.CostPer1mOutput);
             Assert.AreEqual(0, sut.MaxContext);
@@ -275,6 +282,7 @@ namespace TLinkProxy.Tests.Configuration
                 ConcurrencyLimit = 4,
                 Weight = 10,
                 ApiKeyEnvVar = "MY_API_KEY",
+                AdditionalHeaders = new Dictionary<string, string> { ["anthropic-version"] = "2026-10-21" },
                 AllowQueue = true,
                 MaxQueueDepth = 12
             };
@@ -297,6 +305,9 @@ namespace TLinkProxy.Tests.Configuration
             Assert.AreEqual("MY_API_KEY", root.GetProperty("apiKeyEnvVar").GetString());
             Assert.IsTrue(root.GetProperty("allowQueue").GetBoolean());
             Assert.AreEqual(12, root.GetProperty("maxQueueDepth").GetInt32());
+
+            JsonElement additionalHeaders = root.GetProperty("additionalHeaders");
+            Assert.AreEqual("2026-10-21", additionalHeaders.GetProperty("anthropic-version").GetString());
 
             JsonElement tags = root.GetProperty("tags");
             Assert.AreEqual(2, tags.GetArrayLength());
@@ -352,6 +363,7 @@ namespace TLinkProxy.Tests.Configuration
                 ConcurrencyLimit = 8,
                 Weight = 3,
                 ApiKeyEnvVar = "OPENAI_API_KEY",
+                AdditionalHeaders = new Dictionary<string, string> { ["anthropic-version"] = "2026-10-21" },
                 AllowQueue = false,
                 MaxQueueDepth = 0
             };
@@ -375,6 +387,8 @@ namespace TLinkProxy.Tests.Configuration
             Assert.AreEqual(original.ApiKeyEnvVar, sut.ApiKeyEnvVar);
             Assert.AreEqual(original.AllowQueue, sut.AllowQueue);
             Assert.AreEqual(original.MaxQueueDepth, sut.MaxQueueDepth);
+            Assert.IsNotNull(sut.AdditionalHeaders);
+            Assert.AreEqual("2026-10-21", sut.AdditionalHeaders["anthropic-version"]);
         }
     }
 }

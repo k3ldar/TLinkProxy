@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net.Http;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace TLinkProxy.Base
@@ -75,6 +76,7 @@ namespace TLinkProxy.Base
         public const char CharUnderscore = '_';
         public const char CharDash = '-';
         public const char CharDot = '.';
+        public const char CharColon = ':';
 
         public const string MessageTypeRole = "role";
         public const string MessageConstant = "content";
@@ -103,6 +105,38 @@ namespace TLinkProxy.Base
         public const string TruncatedSuffix = "...(truncated)";
         public const string FileNameSeparator = "-";
         public const string AuthenticationSchemeBearer = "Bearer";
+
+        /// <summary>Resolves the Authorization header scheme to use, falling back to <see cref="AuthenticationSchemeBearer"/>.</summary>
+        public static string ResolveAuthenticationScheme(string scheme)
+        {
+            return String.IsNullOrWhiteSpace(scheme) ? AuthenticationSchemeBearer : scheme;
+        }
+
+        /// <summary>
+        /// Adds per-model additional request headers (for example <c>anthropic-version</c>) to a request.
+        /// Blank names/values are ignored and existing header values are preserved.
+        /// </summary>
+        public static void ApplyAdditionalHeaders(HttpRequestMessage request, IDictionary<string, string> headers)
+        {
+            if (request == null || headers == null)
+            {
+                return;
+            }
+
+            foreach (KeyValuePair<string, string> header in headers)
+            {
+                if (String.IsNullOrWhiteSpace(header.Key) || String.IsNullOrWhiteSpace(header.Value))
+                {
+                    continue;
+                }
+
+                if (!request.Headers.TryAddWithoutValidation(header.Key, header.Value))
+                {
+                    request.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                }
+            }
+        }
+
         public const string JsonContentType = "application/json";
         public const string ModelPropertyName = "model";
         public const string RequestTypeCodeReview = "code-review";

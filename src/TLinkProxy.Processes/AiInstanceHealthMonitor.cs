@@ -1,7 +1,8 @@
+using System.Net.Http.Headers;
+
 using TLinkProxy.Abstractions;
 using TLinkProxy.Base;
 using TLinkProxy.Base.Events;
-using System.Net.Http.Headers;
 
 namespace TLinkProxy.Processes
 {
@@ -129,6 +130,7 @@ namespace TLinkProxy.Processes
                 client.Timeout = TimeSpan.FromSeconds(GetProbeTimeoutSeconds(modelConfig));
                 using HttpRequestMessage request = new(HttpMethod.Get, modelConfig.Endpoint.TrimEnd(Constants.CharForwardSlash) + path);
                 ConfigureAuthentication(modelConfig, request);
+                Constants.ApplyAdditionalHeaders(request, modelConfig.AdditionalHeaders);
 
                 HttpResponseMessage res = await client.SendAsync(request, ct).ConfigureAwait(false);
                 return res.IsSuccessStatusCode;
@@ -163,7 +165,7 @@ namespace TLinkProxy.Processes
                 return;
             }
 
-            request.Headers.Authorization = new AuthenticationHeaderValue(Constants.AuthenticationSchemeBearer, key);
+            request.Headers.Authorization = new AuthenticationHeaderValue(Constants.ResolveAuthenticationScheme(modelConfig.AuthScheme), key);
         }
 
         private static TimeSpan GetInterval(IAiModelConfig modelConfig)

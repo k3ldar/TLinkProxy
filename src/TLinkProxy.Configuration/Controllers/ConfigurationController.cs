@@ -53,6 +53,7 @@ namespace TLinkProxy.Configuration.Controllers
             IAiModelConfig backend = viewModel.Backend ?? new AiModelConfig();
 
             backend.Tags = ParseTags(viewModel.TagsCsv);
+            backend.AdditionalHeaders = ParseAdditionalHeaders(viewModel.AdditionalHeadersCsv);
 
             // Details are only meaningful for llama.cpp backends; strip them otherwise.
             if (backend.Kind != ModelKind.LlamaCpp)
@@ -211,6 +212,7 @@ namespace TLinkProxy.Configuration.Controllers
                 Backend = backend,
                 OriginalAlias = String.IsNullOrWhiteSpace(alias) ? String.Empty : alias,
                 TagsCsv = backend.Tags == null ? String.Empty : String.Join(Constants.ListSeparator, backend.Tags),
+                AdditionalHeadersCsv = JoinAdditionalHeaders(backend.AdditionalHeaders),
                 InstalledModels = GetInstalledModels()
             };
 
@@ -225,6 +227,46 @@ namespace TLinkProxy.Configuration.Controllers
             }
 
             return [.. tagsCsv.Split(Constants.TagSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.OrdinalIgnoreCase)];
+        }
+
+        private static Dictionary<string, string> ParseAdditionalHeaders(string text)
+        {
+            Dictionary<string, string> headers = new(StringComparer.OrdinalIgnoreCase);
+
+            if (String.IsNullOrWhiteSpace(text))
+            {
+                return headers;
+            }
+
+            foreach (string rawLine in text.Split([Constants.CrlfNewLine, Constants.NewLine], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                int separator = rawLine.IndexOf(Constants.CharColon);
+
+                if (separator <= 0)
+                {
+                    continue;
+                }
+
+                string name = rawLine[..separator].Trim();
+                string value = rawLine[(separator + 1)..].Trim();
+
+                if (!String.IsNullOrWhiteSpace(name))
+                {
+                    headers[name] = value;
+                }
+            }
+
+            return headers;
+        }
+
+        private static string JoinAdditionalHeaders(IDictionary<string, string> headers)
+        {
+            if (headers == null || headers.Count == 0)
+            {
+                return String.Empty;
+            }
+
+            return String.Join(Environment.NewLine, headers.Select(kv => $"{kv.Key}: {kv.Value}"));
         }
 
         private string[] GetInstalledModels()

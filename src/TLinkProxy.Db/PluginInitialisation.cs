@@ -3,17 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 using PluginManager.Abstractions;
 using TLinkProxy.Abstractions;
 using TLinkProxy.Db.Internal;
-using TLinkProxy.Db.Tables;
 using SharedPluginFeatures;
-using SimpleDB;
 
 namespace TLinkProxy.Db
 {
     public sealed class PluginInitialisation : IPlugin, IInitialiseEvents
     {
-        private const string DatabaseEncryptionKeyEnvVar = "PF_DB_ENCRYPTION_KEY";
-        private const int DefaultEncryptionKeyLength = 32;
-        private const string DatabasePathName = "Database";
+        private const string SqliteDatabaseFileName = "TLinkProxy.db";
 
         #region IPlugin Methods
 
@@ -29,12 +25,14 @@ namespace TLinkProxy.Db
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // tables
-            services.AddSingleton(typeof(TableRowDefinition), typeof(SettingsDataRow));
-            services.AddSingleton(typeof(TableRowDefinition), typeof(AIModelDataRow));
-            services.AddSingleton(typeof(TableRowDefinition), typeof(TokenDailyDataRow));
+            string databaseDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), nameof(TLinkProxy));
+            Directory.CreateDirectory(databaseDirectory);
 
-            // service registrations for wrapping table access and providing higher-level functionality
+            SqliteDatabase database = new(Path.Combine(databaseDirectory, SqliteDatabaseFileName));
+            database.EnsureSchema();
+            services.AddSingleton(database);
+
+            // service registrations providing higher-level functionality over the database
             services.AddSingleton<ISettingsService, SettingsService>();
             services.AddSingleton<IAiModelStore, AiModelStore>();
             services.AddSingleton<ITokenStatsStore, TokenStatsStore>();
@@ -67,22 +65,7 @@ namespace TLinkProxy.Db
 
         public void BeforeConfigureServices(in IServiceCollection services)
         {
-            string encryptionKey = Environment.GetEnvironmentVariable(DatabaseEncryptionKeyEnvVar);
-
-            if (String.IsNullOrWhiteSpace(encryptionKey))
-            {
-                encryptionKey = Shared.Utilities.GetRandomWord(DefaultEncryptionKeyLength); // Generate a random 32-character encryption key
-                Environment.SetEnvironmentVariable(DatabaseEncryptionKeyEnvVar, encryptionKey, EnvironmentVariableTarget.User);
-            }
-
-            string databasePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), nameof(TLinkProxy), DatabasePathName);
-
-            if (!Directory.Exists(databasePath))
-            {
-                Directory.CreateDirectory(databasePath);
-            }
-
-            services.AddSimpleDB(databasePath, encryptionKey);
+            // from interface but unused in this context
         }
 
         public void Configure(in IApplicationBuilder app)

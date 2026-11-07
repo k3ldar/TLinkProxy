@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TLinkProxy.Db\TLinkProxy.Db.csproj" />
     <ProjectReference Include="..\TLinkProxy.Services\TLinkProxy.Services.csproj" />
     <ProjectReference Include="..\TLinkProxy\TLinkProxy.csproj" />
   </ItemGroup>

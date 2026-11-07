@@ -72,6 +72,7 @@
       "kind": "openai",
       "endpoint": "https://api.deepseek.com",
       "apiKeyEnvVar": "DEEPSEEK_API_KEY",
+      "authScheme": "Bearer",
       "model": "deepseek-v4-pro",
       "tags": [ "analysis", "tool-calling", "long-context", "heavy" ],
       "compute": "cloud",
@@ -81,6 +82,25 @@
       "maxContext": 64000,
       "concurrencyLimit": 2,
       "weight": 90
+    },
+    {
+      "alias": "claude",
+      "kind": "openai",
+      "endpoint": "https://api.anthropic.com",
+      "apiKeyEnvVar": "ANTHROPIC_API_KEY",
+      "authScheme": "Bearer",
+      "model": "claude-sonnet-4-5",
+      "tags": [ "analysis", "tool-calling", "long-context" ],
+      "compute": "cloud",
+      "latencyProfile": "medium",
+      "costPer1kInput": 3.0,
+      "costPer1kOutput": 15.0,
+      "maxContext": 200000,
+      "concurrencyLimit": 2,
+      "weight": 90,
+      "additionalHeaders": {
+        "anthropic-version": "2026-10-21"
+      }
     }
   ],
   "globalQueueCapacity": 256

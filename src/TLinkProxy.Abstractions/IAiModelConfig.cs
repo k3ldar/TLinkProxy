@@ -4,7 +4,9 @@
     {
         string Alias { get; set; }
         bool AllowQueue { get; set; }
+        Dictionary<string, string> AdditionalHeaders { get; set; }
         string ApiKeyEnvVar { get; set; }
+        string AuthScheme { get; set; }
         string Compute { get; set; }
         int ConcurrencyLimit { get; set; }
         double CostPer1mInput { get; set; }

@@ -4,7 +4,9 @@
     {
         string Alias { get; set; }
         bool AllowsQueue { get; set; }
+        Dictionary<string, string> AdditionalHeaders { get; set; }
         string ApiKeyEnvVar { get; set; }
+        string AuthScheme { get; set; }
         bool AutoRestart { get; set; }
         uint BatchSize { get; set; }
         ModelComputeProfile ComputeType { get; set; }

@@ -4,11 +4,11 @@
     {
         None = 0,
 
-        LlamaCpp = 1 << 1,
+        LlamaCpp = 1,
 
-        Ollama = 1 << 2,
+        Ollama = 2,
 
-        OpenAI = 1 << 3,
+        OpenAI = 3,
     }
 
     public enum ModelComputeProfile

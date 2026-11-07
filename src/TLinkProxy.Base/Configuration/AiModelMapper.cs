@@ -26,6 +26,8 @@ namespace TLinkProxy.Base.Configuration
                 ConcurrencyLimit = model.ConcurrencyLimit,
                 Weight = model.Weight,
                 ApiKeyEnvVar = model.ApiKeyEnvVar,
+                AuthScheme = String.IsNullOrWhiteSpace(model.AuthScheme) ? Constants.AuthenticationSchemeBearer : model.AuthScheme,
+                AdditionalHeaders = CopyHeaders(model.AdditionalHeaders),
                 AllowQueue = model.AllowsQueue,
                 MaxQueueDepth = model.MaxQueueDepth,
                 Enabled = model.IsEnabled,
@@ -52,7 +54,9 @@ namespace TLinkProxy.Base.Configuration
             {
                 Alias = config.Alias,
                 AllowsQueue = config.AllowQueue,
+                AdditionalHeaders = CopyHeaders(config.AdditionalHeaders),
                 ApiKeyEnvVar = config.ApiKeyEnvVar,
+                AuthScheme = config.AuthScheme,
                 AutoRestart = config.Details?.AutoRestart ?? false,
                 BatchSize = (uint)(config.Details?.BatchSize ?? 0),
                 ComputeType = ParseCompute(config.Compute),
@@ -98,6 +102,26 @@ namespace TLinkProxy.Base.Configuration
         private static byte ToByte(int value)
         {
             return (byte)Math.Clamp(value, byte.MinValue, byte.MaxValue);
+        }
+
+        private static Dictionary<string, string> CopyHeaders(Dictionary<string, string> headers)
+        {
+            if (headers == null || headers.Count == 0)
+            {
+                return null;
+            }
+
+            Dictionary<string, string> copy = new(StringComparer.OrdinalIgnoreCase);
+
+            foreach (KeyValuePair<string, string> header in headers)
+            {
+                if (!String.IsNullOrWhiteSpace(header.Key))
+                {
+                    copy[header.Key] = header.Value;
+                }
+            }
+
+            return copy;
         }
     }
 }

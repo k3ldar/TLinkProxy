@@ -1,9 +1,12 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+using Shared.Classes;
+
 using TLinkProxy.Abstractions;
 using TLinkProxy.Base.Configuration;
 using TLinkProxy.Base.Models;
-using Shared.Classes;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+
 using static TLinkProxy.Base.Constants;
 
 namespace TLinkProxy.Services
@@ -19,7 +22,8 @@ namespace TLinkProxy.Services
 
         private ToolPolicySettings _settings = new();
 
-        public ToolCallPolicy() : this(ResolveConfigFilePath())
+        public ToolCallPolicy()
+            : this(ResolveConfigFilePath())
         {
         }
 

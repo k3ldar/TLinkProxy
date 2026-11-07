@@ -81,6 +81,8 @@ backend (see §3.2 and §3.3).
 | `concurrencyLimit` | int | Max concurrent requests. Defaults to `Constants.DefaultConcurrencyLimit` (1). |
 | `weight` | int | Routing preference weight. Defaults to `Constants.DefaultWeight` (50). |
 | `apiKeyEnvVar` | string | Name of an environment variable holding the API key (e.g. `DEEPSEEK_API_KEY`). |
+| `authScheme` | string | Authorization header scheme sent with the API key (e.g. `Bearer`). Defaults to `Bearer`. |
+| `additionalHeaders` | object | Optional map of extra request headers sent with every request to this backend (e.g. `{"anthropic-version": "2026-10-21"}`). |
 | `details` | LlamaCppConfig | Kind-specific settings. Populated for `llamacpp` backends the proxy should launch; omitted/null for others. |
 | `allowQueue` | bool | Whether requests may queue when the backend is saturated. Default `true`. |
 | `maxQueueDepth` | int | Max requests in this backend's queue. Defaults to `Constants.DefaultQueueDepth` (64). |

@@ -21,7 +21,7 @@ namespace TLinkProxy.Clients
 
                 if (!String.IsNullOrWhiteSpace(key))
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue(Constants.AuthenticationSchemeBearer, key);
+                    request.Headers.Authorization = new AuthenticationHeaderValue(Constants.ResolveAuthenticationScheme(modelConfig.AuthScheme), key);
                 }
             }
         }

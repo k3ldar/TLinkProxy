@@ -9,7 +9,11 @@ namespace TLinkProxy.Db.Internal
 
         public bool AllowsQueue { get; set; }
 
+        public Dictionary<string, string> AdditionalHeaders { get; set; }
+
         public string ApiKeyEnvVar { get; set; }
+
+        public string AuthScheme { get; set; }
 
         public bool AutoRestart { get; set; }
 

@@ -57,6 +57,16 @@ namespace TLinkProxy.Base.Configuration
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string ApiKeyEnvVar { get; set; }
 
+        /// <summary>Authorization header scheme (for example "Bearer") sent with the API key.</summary>
+        [JsonPropertyName("authScheme")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string AuthScheme { get; set; } = Constants.AuthenticationSchemeBearer;
+
+        /// <summary>Additional headers sent with every request to this backend (for example <c>anthropic-version</c>).</summary>
+        [JsonPropertyName("additionalHeaders")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public Dictionary<string, string> AdditionalHeaders { get; set; }
+
         /// <summary>Kind-specific settings. Populated for <c>llamacpp</c> backends that the proxy should launch and supervise.</summary>
         [JsonPropertyName("details")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

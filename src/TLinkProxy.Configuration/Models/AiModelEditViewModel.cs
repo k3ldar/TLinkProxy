@@ -19,6 +19,8 @@ namespace TLinkProxy.Configuration.Models
 
         public string TagsCsv { get; set; }
 
+        public string AdditionalHeadersCsv { get; set; }
+
         public string[] InstalledModels { get; set; }
     }
 }

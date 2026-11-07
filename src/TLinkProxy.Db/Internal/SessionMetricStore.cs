@@ -1,21 +1,20 @@
-using SimpleDB;
+#pragma warning disable CC0009, CC0010 // SQL parameter names are clearer inline
 
+using Microsoft.Data.Sqlite;
 using TLinkProxy.Abstractions;
 using TLinkProxy.Base.Models;
-using TLinkProxy.Db.Tables;
 
 namespace TLinkProxy.Db.Internal
 {
     internal sealed class SessionMetricStore : ISessionMetricStore
     {
-        private readonly ISimpleDBOperations<SessionMetricDataRow> _metricsData;
+        private readonly SqliteDatabase _database;
         private readonly Lock _countsGate = new();
         private Dictionary<string, int> _toolCounts;
 
-        public SessionMetricStore(ISimpleDBOperations<SessionMetricDataRow> metricsData)
+        public SessionMetricStore(SqliteDatabase database)
         {
-            ArgumentNullException.ThrowIfNull(metricsData);
-            _metricsData = metricsData;
+            _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
         public void Record(ISessionMetricRecord record)
@@ -25,22 +24,49 @@ namespace TLinkProxy.Db.Internal
             // Held for the whole write so a concurrent first count build cannot double count this record.
             lock (_countsGate)
             {
-                SessionMetricDataRow session = _metricsData.Select(s => s.SessionId == record.SessionId).FirstOrDefault();
+                using SqliteConnection connection = _database.CreateConnection();
+                using SqliteTransaction transaction = connection.BeginTransaction();
 
-                if (session == null)
+                long id;
+                List<Base.Models.ToolInvocation> invocations;
+
+                using (SqliteCommand select = connection.CreateCommand(
+                    "SELECT Id, ToolInvocations FROM SessionMetrics WHERE SessionId = $sessionId ORDER BY Id LIMIT 1;", transaction)
+                    .With("$sessionId", record.SessionId))
+                using (SqliteDataReader reader = select.ExecuteReader())
                 {
-                    session = new()
+                    if (reader.Read())
                     {
-                        Model = record.Model,
-                        SessionId = record.SessionId
-                    };
+                        id = reader.GetInt64("Id");
+                        invocations = DbJson.Deserialize<List<Base.Models.ToolInvocation>>(reader.GetStringOrNull("ToolInvocations")) ?? [];
+                    }
+                    else
+                    {
+                        id = 0;
+                        invocations = [];
+                    }
+                }
 
-                    _metricsData.Insert(session);
+                string now = DbTime.Format(DateTime.UtcNow);
+
+                if (id == 0)
+                {
+                    using SqliteCommand insert = connection.CreateCommand("""
+                        INSERT INTO SessionMetrics (Model, SessionId, ToolInvocations, Created, Updated)
+                        VALUES ($model, $sessionId, $toolInvocations, $now, $now);
+                        SELECT last_insert_rowid();
+                        """, transaction)
+                        .With("$model", record.Model)
+                        .With("$sessionId", record.SessionId)
+                        .With("$toolInvocations", DbJson.Serialize(invocations))
+                        .With("$now", now);
+
+                    id = Convert.ToInt64(insert.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
                 }
 
                 foreach (IToolInvocation invocation in record.ToolInvocations)
                 {
-                    session.ToolInvocations.Add(new Base.Models.ToolInvocation
+                    invocations.Add(new Base.Models.ToolInvocation
                     {
                         Name = invocation.Name,
                         Arguments = invocation.Arguments,
@@ -48,7 +74,14 @@ namespace TLinkProxy.Db.Internal
                     });
                 }
 
-                _metricsData.Update(session);
+                using SqliteCommand update = connection.CreateCommand(
+                    "UPDATE SessionMetrics SET ToolInvocations = $toolInvocations, Updated = $now WHERE Id = $id;", transaction)
+                    .With("$toolInvocations", DbJson.Serialize(invocations))
+                    .With("$now", now)
+                    .With("$id", id);
+
+                update.ExecuteNonQuery();
+                transaction.Commit();
 
                 AddToolCounts(record.ToolInvocations);
             }
@@ -65,13 +98,51 @@ namespace TLinkProxy.Db.Internal
             }
         }
 
+        public List<ISessionMetricRecord> GetAll()
+        {
+            List<ISessionMetricRecord> result = [];
+
+            using SqliteConnection connection = _database.CreateConnection();
+            using SqliteCommand command = connection.CreateCommand(
+                "SELECT Model, SessionId, ToolInvocations, Created FROM SessionMetrics ORDER BY Id;");
+            using SqliteDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                SessionMetricRecord record = new()
+                {
+                    Model = reader.GetStringOrNull("Model"),
+                    RecordedAtUtc = DbTime.Parse(reader.GetStringOrNull("Created")),
+                    SessionId = reader.GetStringOrNull("SessionId"),
+                };
+
+                foreach (Base.Models.ToolInvocation invocation in DbJson.Deserialize<List<Base.Models.ToolInvocation>>(reader.GetStringOrNull("ToolInvocations")) ?? [])
+                {
+                    record.ToolInvocations.Add(new Base.Models.ToolInvocation
+                    {
+                        Name = invocation.Name,
+                        Arguments = invocation.Arguments,
+                        Outcome = invocation.Outcome
+                    });
+                }
+
+                result.Add(record);
+            }
+
+            return result;
+        }
+
         private Dictionary<string, int> BuildToolCounts()
         {
             Dictionary<string, int> counts = [with(StringComparer.OrdinalIgnoreCase)];
 
-            foreach (SessionMetricDataRow session in _metricsData.Select())
+            using SqliteConnection connection = _database.CreateConnection();
+            using SqliteCommand command = connection.CreateCommand("SELECT ToolInvocations FROM SessionMetrics;");
+            using SqliteDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
             {
-                foreach (Base.Models.ToolInvocation invocation in session.ToolInvocations.ToList())
+                foreach (Base.Models.ToolInvocation invocation in DbJson.Deserialize<List<Base.Models.ToolInvocation>>(reader.GetStringOrNull("ToolInvocations")) ?? [])
                 {
                     IncrementCount(counts, invocation?.Name);
                 }
@@ -101,39 +172,6 @@ namespace TLinkProxy.Db.Internal
             }
 
             counts[name] = counts.TryGetValue(name, out int existing) ? existing + 1 : 1;
-        }
-
-        public List<ISessionMetricRecord> GetAll()
-        {
-            List<ISessionMetricRecord> result = [];
-
-            List<SessionMetricDataRow> sessions = [.. _metricsData.Select()];
-
-            foreach (SessionMetricDataRow session in sessions)
-            {
-                SessionMetricRecord record = new()
-                {
-                    Model = session.Model,
-                    RecordedAtUtc = session.Created,
-                    SessionId = session.SessionId,
-                };
-
-                foreach (var invocation in session.ToolInvocations.ToList())
-                {
-                    ToolInvocation toolInvocation = new()
-                    {
-                        Name = invocation.Name,
-                        Arguments = invocation.Arguments,
-                        Outcome = invocation.Outcome
-                    };
-
-                    record.ToolInvocations.Add(toolInvocation);
-                }
-
-                result.Add(record);
-            }
-
-            return result;
         }
     }
 }
